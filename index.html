@@ -421,7 +421,19 @@ async function connectClient(id) {
   const c = getClients().find(x=>x.id===id); if(!c) return;
   S.activeId=id; S.siteUrl=c.url; S.clientName=c.name;
   renderClientList();
-  if(S.token){ enterDashboard(); return; }
+  if(S.token){
+    // Verificar que el token sigue vigente
+    try {
+      const test = await fetch(
+        `https://www.googleapis.com/webmasters/v3/sites/${encodeURIComponent(c.url)}`,
+        {headers:{Authorization:`Bearer ${S.token}`}}
+      );
+      if(test.ok){ enterDashboard(); return; }
+      // Token expirado — re-autenticar
+      S.token = null;
+    } catch(e){}
+  }
+  sessionStorage.setItem('pending_client', id);
   connectOAuth();
 }
 
@@ -444,7 +456,14 @@ async function handleOAuthReturn() {
     const data = await res.json();
     const sites = data.siteEntry||[];
     if(!S.siteUrl && sites.length) S.siteUrl = sites[0].siteUrl;
-    if(!S.clientName) S.clientName = (S.siteUrl||'Cliente').replace(/https?:\/\//,'').replace(/\/$/,'');
+    if(!S.clientName) S.clientName = (S.siteUrl||'Cliente').replace(/https?:\/\//,'').replace(/\/$/,''); 
+    // Recuperar cliente pendiente si venimos de un click en sidebar
+    const pending = sessionStorage.getItem('pending_client');
+    if(pending){ 
+      sessionStorage.removeItem('pending_client');
+      const pc = getClients().find(x=>x.id===pending);
+      if(pc){ S.activeId=pending; S.siteUrl=pc.url; S.clientName=pc.name; }
+    }
     enterDashboard();
   } catch(e){ showAuthError(e.message); }
 }
