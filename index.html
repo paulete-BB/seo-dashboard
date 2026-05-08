@@ -8,418 +8,162 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
-/* ── RESET & BASE ── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { font-size: 14px; }
-body {
-  font-family: 'DM Sans', sans-serif;
-  background: #f5f5f3;
-  color: #111;
-  min-height: 100vh;
-  -webkit-font-smoothing: antialiased;
-}
-
-/* ── VARIABLES ── */
+body { font-family: 'DM Sans', sans-serif; background: #f5f5f3; color: #111; min-height: 100vh; -webkit-font-smoothing: antialiased; }
 :root {
-  --red:      #e8352a;
-  --red-light:#fff0ef;
-  --red-mid:  #ffdcda;
-  --black:    #111111;
-  --gray-900: #222222;
-  --gray-600: #555555;
-  --gray-400: #888888;
-  --gray-200: #dddddd;
-  --gray-100: #f0f0ee;
-  --bg:       #f5f5f3;
-  --white:    #ffffff;
-  --border:   #e5e5e3;
-  --hot:      #e8352a;
-  --tibio:    #f59e0b;
-  --frio:     #3b82f6;
-  --success:  #16a34a;
-  --radius:   6px;
-  --radius-lg:10px;
-  --shadow:   0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+  --red:#e8352a; --red-light:#fff0ef; --red-mid:#ffdcda;
+  --black:#111111; --gray-900:#222222; --gray-600:#555555; --gray-400:#888888;
+  --gray-200:#dddddd; --gray-100:#f0f0ee; --bg:#f5f5f3; --white:#ffffff;
+  --border:#e5e5e3; --success:#16a34a; --radius:6px; --radius-lg:10px;
+  --shadow:0 1px 3px rgba(0,0,0,0.08),0 1px 2px rgba(0,0,0,0.04);
   --shadow-md:0 4px 12px rgba(0,0,0,0.08);
 }
-
-/* ── LAYOUT ── */
-.shell { display: flex; min-height: 100vh; }
-
-/* ── SIDEBAR ── */
-.sidebar {
-  width: 220px; flex-shrink: 0;
-  background: var(--white);
-  border-right: 1px solid var(--border);
-  display: flex; flex-direction: column;
-  position: fixed; top: 0; bottom: 0; left: 0; z-index: 100;
-}
-.sidebar-logo {
-  padding: 20px 18px 16px;
-  border-bottom: 1px solid var(--border);
-  display: flex; align-items: center; gap: 10px;
-  cursor: pointer; position: relative;
-}
-.logo-img {
-  width: 32px; height: 32px; border-radius: 6px;
-  object-fit: contain; background: var(--gray-100);
-  border: 1px solid var(--border);
-}
-.logo-placeholder {
-  width: 32px; height: 32px; border-radius: 6px;
-  background: var(--black); display: flex; align-items: center;
-  justify-content: center; color: white; font-size: 13px; font-weight: 600;
-  flex-shrink: 0;
-}
-.logo-text { font-size: 13px; font-weight: 600; color: var(--black); line-height: 1.2; }
-.logo-sub  { font-size: 10px; color: var(--gray-400); font-family: 'DM Mono', monospace; }
-.logo-upload-hint {
-  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-  background: rgba(255,255,255,0.92); border-radius: 6px; opacity: 0;
-  font-size: 10px; color: var(--gray-600); transition: opacity .15s;
-  font-family: 'DM Mono', monospace; text-align: center; padding: 4px;
-}
-.sidebar-logo:hover .logo-upload-hint { opacity: 1; }
-#logo-file-input { display: none; }
-
-.sidebar-section { padding: 14px 10px 6px; }
-.sidebar-section-label {
-  font-size: 10px; font-family: 'DM Mono', monospace; color: var(--gray-400);
-  text-transform: uppercase; letter-spacing: .1em; padding: 0 8px; margin-bottom: 4px;
-}
-.nav-item {
-  display: flex; align-items: center; gap: 8px;
-  padding: 7px 8px; border-radius: var(--radius); cursor: pointer;
-  font-size: 13px; color: var(--gray-600); transition: all .12s;
-  text-decoration: none; user-select: none;
-}
-.nav-item:hover { background: var(--gray-100); color: var(--black); }
-.nav-item.active { background: var(--red-light); color: var(--red); font-weight: 500; }
-.nav-dot {
-  width: 6px; height: 6px; border-radius: 50%; background: var(--gray-200); flex-shrink: 0;
-}
-.nav-item.active .nav-dot { background: var(--red); }
-
-.sidebar-footer {
-  margin-top: auto; padding: 14px 18px;
-  border-top: 1px solid var(--border);
-  font-size: 11px; color: var(--gray-400); font-family: 'DM Mono', monospace;
-}
-.sidebar-footer span { color: var(--red); }
-
-/* ── MAIN ── */
-.main { margin-left: 220px; flex: 1; min-height: 100vh; }
-
-/* ── TOPBAR ── */
-.topbar {
-  background: var(--white); border-bottom: 1px solid var(--border);
-  padding: 0 28px; height: 48px; display: flex; align-items: center;
-  justify-content: space-between; position: sticky; top: 0; z-index: 50;
-}
-.topbar-left { display: flex; align-items: center; gap: 8px; }
-.topbar-crumb { font-size: 12px; color: var(--gray-400); }
-.topbar-crumb-sep { color: var(--gray-200); }
-.topbar-title { font-size: 13px; font-weight: 500; color: var(--black); }
-.topbar-right { display: flex; align-items: center; gap: 10px; }
-.topbar-date {
-  font-size: 11px; font-family: 'DM Mono', monospace; color: var(--gray-400);
-}
-.status-pill {
-  display: flex; align-items: center; gap: 5px;
-  background: var(--gray-100); border-radius: 20px;
-  padding: 3px 10px; font-size: 11px; color: var(--gray-600);
-  font-family: 'DM Mono', monospace;
-}
-.status-pill.connected { background: #f0fdf4; color: var(--success); }
-.pulse { width: 6px; height: 6px; border-radius: 50%; background: var(--gray-400); }
-.status-pill.connected .pulse {
-  background: var(--success);
-  animation: blink 2s ease-in-out infinite;
-}
+.shell { display:flex; min-height:100vh; }
+.sidebar { width:220px; flex-shrink:0; background:var(--white); border-right:1px solid var(--border); display:flex; flex-direction:column; position:fixed; top:0; bottom:0; left:0; z-index:100; }
+.sidebar-logo { padding:20px 18px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:10px; cursor:pointer; position:relative; }
+.logo-img { width:32px; height:32px; border-radius:6px; object-fit:contain; background:var(--gray-100); border:1px solid var(--border); }
+.logo-placeholder { width:32px; height:32px; border-radius:6px; background:var(--black); display:flex; align-items:center; justify-content:center; color:white; font-size:13px; font-weight:600; flex-shrink:0; }
+.logo-text { font-size:13px; font-weight:600; color:var(--black); line-height:1.2; }
+.logo-sub { font-size:10px; color:var(--gray-400); font-family:'DM Mono',monospace; }
+.logo-upload-hint { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.92); border-radius:6px; opacity:0; font-size:10px; color:var(--gray-600); transition:opacity .15s; font-family:'DM Mono',monospace; text-align:center; padding:4px; }
+.sidebar-logo:hover .logo-upload-hint { opacity:1; }
+#logo-file-input { display:none; }
+.sidebar-section { padding:14px 10px 6px; }
+.sidebar-section-label { font-size:10px; font-family:'DM Mono',monospace; color:var(--gray-400); text-transform:uppercase; letter-spacing:.1em; padding:0 8px; margin-bottom:4px; display:flex; align-items:center; justify-content:space-between; }
+.nav-item { display:flex; align-items:center; gap:8px; padding:7px 8px; border-radius:var(--radius); cursor:pointer; font-size:13px; color:var(--gray-600); transition:all .12s; text-decoration:none; user-select:none; }
+.nav-item:hover { background:var(--gray-100); color:var(--black); }
+.nav-item.active { background:var(--red-light); color:var(--red); font-weight:500; }
+.nav-dot { width:6px; height:6px; border-radius:50%; background:var(--gray-200); flex-shrink:0; }
+.nav-item.active .nav-dot { background:var(--red); }
+.sidebar-footer { margin-top:auto; padding:14px 18px; border-top:1px solid var(--border); font-size:11px; color:var(--gray-400); font-family:'DM Mono',monospace; }
+.sidebar-footer span { color:var(--red); }
+.main { margin-left:220px; flex:1; min-height:100vh; }
+.topbar { background:var(--white); border-bottom:1px solid var(--border); padding:0 28px; height:48px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:50; }
+.topbar-left { display:flex; align-items:center; gap:8px; }
+.topbar-crumb { font-size:12px; color:var(--gray-400); }
+.topbar-crumb-sep { color:var(--gray-200); }
+.topbar-title { font-size:13px; font-weight:500; color:var(--black); }
+.topbar-right { display:flex; align-items:center; gap:10px; }
+.topbar-date { font-size:11px; font-family:'DM Mono',monospace; color:var(--gray-400); }
+.status-pill { display:flex; align-items:center; gap:5px; background:var(--gray-100); border-radius:20px; padding:3px 10px; font-size:11px; color:var(--gray-600); font-family:'DM Mono',monospace; }
+.status-pill.connected { background:#f0fdf4; color:var(--success); }
+.pulse { width:6px; height:6px; border-radius:50%; background:var(--gray-400); }
+.status-pill.connected .pulse { background:var(--success); animation:blink 2s ease-in-out infinite; }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
-
-/* ── CONTENT ── */
-.content { padding: 24px 28px 48px; }
-
-/* ── SCREEN TOGGLE ── */
-.screen { display: none; }
-.screen.active { display: block; }
-
-/* ── AUTH SCREEN ── */
-.auth-wrap { max-width: 460px; margin: 60px auto; }
-.auth-eyebrow {
-  font-size: 11px; font-family: 'DM Mono', monospace; color: var(--gray-400);
-  letter-spacing: .12em; text-transform: uppercase; margin-bottom: 8px;
-}
-.auth-heading { font-size: 22px; font-weight: 600; color: var(--black); margin-bottom: 4px; }
-.auth-sub { font-size: 13px; color: var(--gray-600); margin-bottom: 28px; line-height: 1.6; }
-
-.card {
-  background: var(--white); border: 1px solid var(--border);
-  border-radius: var(--radius-lg); padding: 24px;
-  box-shadow: var(--shadow);
-}
-.card + .card { margin-top: 12px; }
-
-.field { margin-bottom: 14px; }
-.field:last-child { margin-bottom: 0; }
-.field-label {
-  display: block; font-size: 11px; font-family: 'DM Mono', monospace;
-  color: var(--gray-600); text-transform: uppercase; letter-spacing: .08em;
-  margin-bottom: 5px;
-}
-.field-input {
-  width: 100%; height: 36px; padding: 0 12px;
-  border: 1px solid var(--border); border-radius: var(--radius);
-  font-family: 'DM Mono', monospace; font-size: 12px; color: var(--black);
-  background: var(--white); outline: none; transition: border-color .15s;
-}
-.field-input:focus { border-color: var(--black); }
-.field-input::placeholder { color: var(--gray-400); }
-
-.btn {
-  height: 36px; padding: 0 16px; border-radius: var(--radius);
-  font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500;
-  cursor: pointer; border: none; transition: all .15s; display: inline-flex;
-  align-items: center; gap: 6px;
-}
-.btn-primary { background: var(--black); color: white; width: 100%; justify-content: center; }
-.btn-primary:hover { background: var(--gray-900); }
-.btn-primary:disabled { opacity: .4; cursor: not-allowed; }
-.btn-outline {
-  background: var(--white); color: var(--black); width: 100%;
-  justify-content: center; border: 1px solid var(--border);
-}
-.btn-outline:hover { border-color: var(--black); background: var(--gray-100); }
-.btn-sm {
-  height: 28px; padding: 0 12px; font-size: 11px;
-  font-family: 'DM Mono', monospace; background: transparent;
-  border: 1px solid var(--border); color: var(--gray-600); border-radius: var(--radius);
-}
-.btn-sm:hover { border-color: var(--gray-600); color: var(--black); }
-
-.divider-text {
-  display: flex; align-items: center; gap: 10px; margin: 14px 0;
-  font-size: 11px; color: var(--gray-400); font-family: 'DM Mono', monospace;
-}
-.divider-text::before, .divider-text::after {
-  content: ''; flex: 1; height: 1px; background: var(--border);
-}
-
-.error-msg {
-  background: var(--red-light); border: 1px solid var(--red-mid);
-  border-radius: var(--radius); padding: 8px 12px;
-  font-size: 12px; color: var(--red); font-family: 'DM Mono', monospace;
-  margin-top: 12px; display: none;
-}
-.error-msg.visible { display: block; }
-
-.help-note {
-  font-size: 11px; color: var(--gray-400); font-family: 'DM Mono', monospace;
-  line-height: 1.7; margin-top: 12px;
-}
-.help-note a { color: var(--black); }
-
-/* ── PAGE HEADER ── */
-.page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
-.page-header-left {}
-.page-title { font-size: 18px; font-weight: 600; color: var(--black); }
-.page-sub { font-size: 12px; color: var(--gray-400); font-family: 'DM Mono', monospace; margin-top: 2px; }
-.page-header-right { display: flex; align-items: center; gap: 8px; }
-
-/* ── RANGE TABS ── */
-.range-tabs { display: flex; gap: 2px; background: var(--gray-100); border-radius: var(--radius); padding: 3px; }
-.range-tab {
-  padding: 4px 12px; border-radius: 4px; font-size: 11px;
-  font-family: 'DM Mono', monospace; color: var(--gray-600);
-  cursor: pointer; border: none; background: transparent; transition: all .12s;
-}
-.range-tab.active { background: var(--white); color: var(--black); font-weight: 500; box-shadow: var(--shadow); }
-
-/* ── KPI ROW ── */
-.kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
-@media(max-width:800px) { .kpi-grid { grid-template-columns: repeat(2,1fr); } }
-
-.kpi-card {
-  background: var(--white); border: 1px solid var(--border);
-  border-radius: var(--radius-lg); padding: 16px 18px;
-  box-shadow: var(--shadow); position: relative; overflow: hidden;
-}
-.kpi-card::before {
-  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
-  background: var(--border);
-}
-.kpi-card.accent::before { background: var(--red); }
-.kpi-tag {
-  font-size: 10px; font-family: 'DM Mono', monospace; color: var(--gray-400);
-  text-transform: uppercase; letter-spacing: .1em; margin-bottom: 8px;
-}
-.kpi-value {
-  font-size: 26px; font-weight: 600; color: var(--black);
-  letter-spacing: -.02em; line-height: 1;
-}
-.kpi-delta {
-  font-size: 11px; font-family: 'DM Mono', monospace; margin-top: 5px;
-  display: flex; align-items: center; gap: 4px;
-}
-.delta-up   { color: var(--success); }
-.delta-down { color: var(--red); }
-.delta-flat { color: var(--gray-400); }
-
-/* ── GRID LAYOUTS ── */
-.row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
-.row-3 { display: grid; grid-template-columns: 1.7fr 1fr; gap: 10px; margin-bottom: 10px; }
-@media(max-width:800px) { .row-2,.row-3 { grid-template-columns: 1fr; } }
-
-/* ── PANEL ── */
-.panel {
-  background: var(--white); border: 1px solid var(--border);
-  border-radius: var(--radius-lg); box-shadow: var(--shadow);
-  overflow: hidden;
-}
-.panel-head {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 18px 12px; border-bottom: 1px solid var(--border);
-}
-.panel-title { font-size: 13px; font-weight: 500; color: var(--black); }
-.panel-body { padding: 16px 18px; }
-.panel-tag {
-  font-size: 10px; font-family: 'DM Mono', monospace; padding: 2px 8px;
-  border-radius: 20px; letter-spacing: .08em; text-transform: uppercase;
-  border: 1px solid;
-}
-.tag-gsc   { background: #fff0ef; color: var(--red);     border-color: var(--red-mid); }
-.tag-aeo   { background: #eff6ff; color: #3b82f6;        border-color: #bfdbfe; }
-.tag-live  { background: #f0fdf4; color: var(--success);  border-color: #bbf7d0; }
-.tag-geo   { background: #fefce8; color: #ca8a04;        border-color: #fde68a; }
-
-/* ── CHART ── */
-.chart-wrap { position: relative; width: 100%; height: 200px; }
-
-/* ── KW TABLE ── */
-.kw-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-.kw-table th {
-  font-family: 'DM Mono', monospace; font-size: 10px; color: var(--gray-400);
-  text-transform: uppercase; letter-spacing: .1em;
-  padding: 0 8px 8px; border-bottom: 1px solid var(--border);
-  text-align: left; font-weight: 500;
-}
-.kw-table td {
-  padding: 8px 8px; border-bottom: 1px solid var(--gray-100);
-  color: var(--black); vertical-align: middle;
-}
-.kw-table tr:last-child td { border-bottom: none; }
-.kw-table tr:hover td { background: var(--gray-100); }
-.kw-query { max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
-
-.pos-badge {
-  display: inline-flex; align-items: center; justify-content: center;
-  min-width: 30px; height: 20px; border-radius: 4px; padding: 0 5px;
-  font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 500;
-}
-.pos-t3  { background: #f0fdf4; color: var(--success); }
-.pos-t10 { background: #eff6ff; color: #3b82f6; }
-.pos-t20 { background: #fff0ef; color: var(--red); }
-.pos-rest{ background: var(--gray-100); color: var(--gray-600); }
-
-.chip {
-  font-family: 'DM Mono', monospace; font-size: 10px; padding: 2px 6px;
-  border-radius: 3px; white-space: nowrap; display: inline-block;
-}
-.chip-up   { background: #f0fdf4; color: var(--success); }
-.chip-dn   { background: #fff0ef; color: var(--red); }
-.chip-new  { background: #eff6ff; color: #3b82f6; }
-.chip-same { background: var(--gray-100); color: var(--gray-400); }
-
-/* ── SNIPPET LIST ── */
-.snippet-row {
-  display: flex; align-items: center; gap: 10px;
-  padding: 8px 0; border-bottom: 1px solid var(--gray-100);
-  font-size: 12px;
-}
-.snippet-row:last-child { border-bottom: none; }
-.snippet-type {
-  font-family: 'DM Mono', monospace; font-size: 10px; padding: 2px 7px;
-  border-radius: 3px; flex-shrink: 0; background: #fff0ef; color: var(--red);
-  border: 1px solid var(--red-mid);
-}
-.snippet-query { flex: 1; color: var(--black); }
-.snippet-week  { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--gray-400); }
-
-/* ── CTR BARS ── */
-.ctr-row { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; font-size: 11px; }
-.ctr-label { width: 130px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: 'DM Mono', monospace; color: var(--gray-600); }
-.ctr-track { flex: 1; height: 5px; background: var(--gray-100); border-radius: 3px; overflow: hidden; }
-.ctr-fill  { height: 100%; border-radius: 3px; background: var(--red); transition: width .4s; }
-.ctr-pct   { width: 34px; text-align: right; font-family: 'DM Mono', monospace; color: var(--gray-600); }
-
-/* ── GEO AI BARS ── */
-.ai-block { margin-bottom: 14px; }
-.ai-name { font-size: 11px; font-weight: 500; color: var(--black); margin-bottom: 6px; display: flex; justify-content: space-between; }
-.ai-name span { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--gray-600); }
-.ai-track { height: 7px; background: var(--gray-100); border-radius: 4px; overflow: hidden; }
-.ai-fill { height: 100%; border-radius: 4px; background: var(--red); transition: width .6s; }
-
-/* ── LOADING ── */
-.skeleton {
-  background: linear-gradient(90deg, var(--gray-100) 25%, var(--gray-200) 50%, var(--gray-100) 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.3s infinite;
-  border-radius: 4px;
-}
-@keyframes shimmer { to { background-position: -200% 0; } }
-
-/* ── CLIENTES ── */
-.client-list { overflow-y: auto; max-height: 180px; }
-.client-item {
-  display: flex; align-items: center; gap: 8px;
-  padding: 6px 8px; border-radius: var(--radius);
-  cursor: pointer; transition: background .12s; position: relative;
-}
-.client-item:hover { background: var(--gray-100); }
-.client-item:hover .client-del { opacity: 1; }
-.client-avatar {
-  width: 22px; height: 22px; border-radius: 4px; background: var(--black);
-  display: flex; align-items: center; justify-content: center;
-  color: white; font-size: 10px; font-weight: 600; flex-shrink: 0;
-}
-.client-info { flex: 1; min-width: 0; }
-.client-name { font-size: 12px; font-weight: 500; color: var(--black); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.client-url  { font-size: 10px; color: var(--gray-400); font-family: 'DM Mono', monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.client-del {
-  opacity: 0; background: none; border: none; cursor: pointer;
-  color: var(--gray-400); font-size: 14px; padding: 0 2px; line-height: 1;
-  transition: color .12s, opacity .12s; flex-shrink: 0;
-}
-.client-del:hover { color: var(--red); }
-.client-active .client-name { color: var(--red); }
-.client-active .client-avatar { background: var(--red); }
-
-/* Modal overlay */
-.modal-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.3);
-  z-index: 200; display: flex; align-items: center; justify-content: center;
-}
-.modal {
-  background: var(--white); border-radius: var(--radius-lg);
-  border: 1px solid var(--border); box-shadow: var(--shadow-md);
-  padding: 24px; width: 380px; max-width: 95vw;
-}
-.modal-title { font-size: 14px; font-weight: 600; margin-bottom: 16px; }
-.modal-actions { display: flex; gap: 8px; margin-top: 16px; justify-content: flex-end; }
-.btn-ghost { background: none; border: 1px solid var(--border); color: var(--gray-600); }
-.btn-ghost:hover { border-color: var(--gray-600); }
-
-/* ── MISC ── */
-.hidden { display: none !important; }
-.mt8 { margin-top: 8px; }
-.text-mono { font-family: 'DM Mono', monospace; }
+.content { padding:24px 28px 48px; }
+.screen { display:none; }
+.screen.active { display:block; }
+.auth-wrap { max-width:460px; margin:60px auto; }
+.auth-eyebrow { font-size:11px; font-family:'DM Mono',monospace; color:var(--gray-400); letter-spacing:.12em; text-transform:uppercase; margin-bottom:8px; }
+.auth-heading { font-size:22px; font-weight:600; color:var(--black); margin-bottom:4px; }
+.auth-sub { font-size:13px; color:var(--gray-600); margin-bottom:28px; line-height:1.6; }
+.card { background:var(--white); border:1px solid var(--border); border-radius:var(--radius-lg); padding:24px; box-shadow:var(--shadow); }
+.card+.card { margin-top:12px; }
+.field { margin-bottom:14px; }
+.field:last-child { margin-bottom:0; }
+.field-label { display:block; font-size:11px; font-family:'DM Mono',monospace; color:var(--gray-600); text-transform:uppercase; letter-spacing:.08em; margin-bottom:5px; }
+.field-input { width:100%; height:36px; padding:0 12px; border:1px solid var(--border); border-radius:var(--radius); font-family:'DM Mono',monospace; font-size:12px; color:var(--black); background:var(--white); outline:none; transition:border-color .15s; }
+.field-input:focus { border-color:var(--black); }
+.field-input::placeholder { color:var(--gray-400); }
+.btn { height:36px; padding:0 16px; border-radius:var(--radius); font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; cursor:pointer; border:none; transition:all .15s; display:inline-flex; align-items:center; gap:6px; }
+.btn-primary { background:var(--black); color:white; width:100%; justify-content:center; }
+.btn-primary:hover { background:var(--gray-900); }
+.btn-primary:disabled { opacity:.4; cursor:not-allowed; }
+.btn-outline { background:var(--white); color:var(--black); width:100%; justify-content:center; border:1px solid var(--border); }
+.btn-outline:hover { border-color:var(--black); background:var(--gray-100); }
+.btn-sm { height:28px; padding:0 12px; font-size:11px; font-family:'DM Mono',monospace; background:transparent; border:1px solid var(--border); color:var(--gray-600); border-radius:var(--radius); cursor:pointer; }
+.btn-sm:hover { border-color:var(--gray-600); color:var(--black); }
+.divider-text { display:flex; align-items:center; gap:10px; margin:14px 0; font-size:11px; color:var(--gray-400); font-family:'DM Mono',monospace; }
+.divider-text::before,.divider-text::after { content:''; flex:1; height:1px; background:var(--border); }
+.error-msg { background:var(--red-light); border:1px solid var(--red-mid); border-radius:var(--radius); padding:8px 12px; font-size:12px; color:var(--red); font-family:'DM Mono',monospace; margin-top:12px; display:none; }
+.error-msg.visible { display:block; }
+.help-note { font-size:11px; color:var(--gray-400); font-family:'DM Mono',monospace; line-height:1.7; margin-top:12px; }
+.page-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:12px; }
+.page-title { font-size:18px; font-weight:600; color:var(--black); }
+.page-sub { font-size:12px; color:var(--gray-400); font-family:'DM Mono',monospace; margin-top:2px; }
+.range-tabs { display:flex; gap:2px; background:var(--gray-100); border-radius:var(--radius); padding:3px; }
+.range-tab { padding:4px 12px; border-radius:4px; font-size:11px; font-family:'DM Mono',monospace; color:var(--gray-600); cursor:pointer; border:none; background:transparent; transition:all .12s; }
+.range-tab.active { background:var(--white); color:var(--black); font-weight:500; box-shadow:var(--shadow); }
+.kpi-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:16px; }
+@media(max-width:800px){ .kpi-grid { grid-template-columns:repeat(2,1fr); } }
+.kpi-card { background:var(--white); border:1px solid var(--border); border-radius:var(--radius-lg); padding:16px 18px; box-shadow:var(--shadow); position:relative; overflow:hidden; }
+.kpi-card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:var(--border); }
+.kpi-card.accent::before { background:var(--red); }
+.kpi-tag { font-size:10px; font-family:'DM Mono',monospace; color:var(--gray-400); text-transform:uppercase; letter-spacing:.1em; margin-bottom:8px; }
+.kpi-value { font-size:26px; font-weight:600; color:var(--black); letter-spacing:-.02em; line-height:1; }
+.kpi-delta { font-size:11px; font-family:'DM Mono',monospace; margin-top:5px; }
+.delta-up { color:var(--success); }
+.delta-down { color:var(--red); }
+.row-2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px; }
+.row-3 { display:grid; grid-template-columns:1.7fr 1fr; gap:10px; margin-bottom:10px; }
+@media(max-width:800px){ .row-2,.row-3 { grid-template-columns:1fr; } }
+.panel { background:var(--white); border:1px solid var(--border); border-radius:var(--radius-lg); box-shadow:var(--shadow); overflow:hidden; }
+.panel-head { display:flex; align-items:center; justify-content:space-between; padding:14px 18px 12px; border-bottom:1px solid var(--border); }
+.panel-title { font-size:13px; font-weight:500; color:var(--black); }
+.panel-body { padding:16px 18px; }
+.panel-tag { font-size:10px; font-family:'DM Mono',monospace; padding:2px 8px; border-radius:20px; letter-spacing:.08em; text-transform:uppercase; border:1px solid; }
+.tag-gsc { background:#fff0ef; color:var(--red); border-color:var(--red-mid); }
+.tag-aeo { background:#eff6ff; color:#3b82f6; border-color:#bfdbfe; }
+.tag-live { background:#f0fdf4; color:var(--success); border-color:#bbf7d0; }
+.tag-geo { background:#fefce8; color:#ca8a04; border-color:#fde68a; }
+.chart-wrap { position:relative; width:100%; height:200px; }
+.kw-table { width:100%; border-collapse:collapse; font-size:12px; }
+.kw-table th { font-family:'DM Mono',monospace; font-size:10px; color:var(--gray-400); text-transform:uppercase; letter-spacing:.1em; padding:0 8px 8px; border-bottom:1px solid var(--border); text-align:left; font-weight:500; }
+.kw-table td { padding:8px; border-bottom:1px solid var(--gray-100); color:var(--black); vertical-align:middle; }
+.kw-table tr:last-child td { border-bottom:none; }
+.kw-table tr:hover td { background:var(--gray-100); }
+.kw-query { max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; }
+.pos-badge { display:inline-flex; align-items:center; justify-content:center; min-width:30px; height:20px; border-radius:4px; padding:0 5px; font-family:'DM Mono',monospace; font-size:11px; font-weight:500; }
+.pos-t3 { background:#f0fdf4; color:var(--success); }
+.pos-t10 { background:#eff6ff; color:#3b82f6; }
+.pos-t20 { background:#fff0ef; color:var(--red); }
+.pos-rest { background:var(--gray-100); color:var(--gray-600); }
+.chip { font-family:'DM Mono',monospace; font-size:10px; padding:2px 6px; border-radius:3px; white-space:nowrap; display:inline-block; }
+.chip-up { background:#f0fdf4; color:var(--success); }
+.chip-dn { background:#fff0ef; color:var(--red); }
+.chip-new { background:#eff6ff; color:#3b82f6; }
+.chip-same { background:var(--gray-100); color:var(--gray-400); }
+.snippet-row { display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--gray-100); font-size:12px; }
+.snippet-row:last-child { border-bottom:none; }
+.snippet-type { font-family:'DM Mono',monospace; font-size:10px; padding:2px 7px; border-radius:3px; flex-shrink:0; background:#fff0ef; color:var(--red); border:1px solid var(--red-mid); }
+.snippet-query { flex:1; color:var(--black); }
+.snippet-week { font-family:'DM Mono',monospace; font-size:10px; color:var(--gray-400); }
+.ctr-row { display:flex; align-items:center; gap:8px; margin-bottom:7px; font-size:11px; }
+.ctr-label { width:130px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-family:'DM Mono',monospace; color:var(--gray-600); }
+.ctr-track { flex:1; height:5px; background:var(--gray-100); border-radius:3px; overflow:hidden; }
+.ctr-fill { height:100%; border-radius:3px; background:var(--red); transition:width .4s; }
+.ctr-pct { width:34px; text-align:right; font-family:'DM Mono',monospace; color:var(--gray-600); }
+.ai-block { margin-bottom:14px; }
+.ai-name { font-size:11px; font-weight:500; color:var(--black); margin-bottom:6px; display:flex; justify-content:space-between; }
+.ai-name span { font-family:'DM Mono',monospace; font-size:11px; color:var(--gray-600); }
+.ai-track { height:7px; background:var(--gray-100); border-radius:4px; overflow:hidden; }
+.ai-fill { height:100%; border-radius:4px; background:var(--red); transition:width .6s; }
+.client-list { overflow-y:auto; max-height:200px; }
+.client-item { display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:var(--radius); cursor:pointer; transition:background .12s; position:relative; }
+.client-item:hover { background:var(--gray-100); }
+.client-item:hover .client-del { opacity:1; }
+.client-avatar { width:22px; height:22px; border-radius:4px; background:var(--black); display:flex; align-items:center; justify-content:center; color:white; font-size:10px; font-weight:600; flex-shrink:0; }
+.client-info { flex:1; min-width:0; }
+.client-name { font-size:12px; font-weight:500; color:var(--black); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.client-url { font-size:10px; color:var(--gray-400); font-family:'DM Mono',monospace; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.client-del { opacity:0; background:none; border:none; cursor:pointer; color:var(--gray-400); font-size:14px; padding:0 2px; line-height:1; transition:color .12s,opacity .12s; flex-shrink:0; }
+.client-del:hover { color:var(--red); }
+.client-active .client-name { color:var(--red); }
+.client-active .client-avatar { background:var(--red); }
+.modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.3); z-index:200; display:flex; align-items:center; justify-content:center; }
+.modal { background:var(--white); border-radius:var(--radius-lg); border:1px solid var(--border); box-shadow:var(--shadow-md); padding:24px; width:380px; max-width:95vw; }
+.modal-title { font-size:14px; font-weight:600; margin-bottom:16px; }
+.modal-actions { display:flex; gap:8px; margin-top:16px; justify-content:flex-end; }
+.btn-ghost { background:none; border:1px solid var(--border); color:var(--gray-600); cursor:pointer; height:36px; padding:0 16px; border-radius:var(--radius); font-family:'DM Sans',sans-serif; font-size:13px; }
+.btn-ghost:hover { border-color:var(--gray-600); }
+.hidden { display:none !important; }
+.mt8 { margin-top:8px; }
 </style>
 </head>
 <body>
 <div class="shell">
 
-  <!-- ═══ SIDEBAR ═══ -->
   <aside class="sidebar">
     <div class="sidebar-logo" onclick="document.getElementById('logo-file-input').click()">
       <div id="logo-container">
@@ -436,24 +180,18 @@ body {
 
     <div class="sidebar-section">
       <div class="sidebar-section-label">Reportes</div>
-      <div class="nav-item active" onclick="showSection('dashboard')">
-        <span class="nav-dot"></span> Dashboard SEO
-      </div>
-      <div class="nav-item" onclick="showSection('aeo')">
-        <span class="nav-dot"></span> AEO — Snippets
-      </div>
-      <div class="nav-item" onclick="showSection('geo')">
-        <span class="nav-dot"></span> GEO — IAs
-      </div>
+      <div class="nav-item active" onclick="showSection('dashboard',this)"><span class="nav-dot"></span> Dashboard SEO</div>
+      <div class="nav-item" onclick="showSection('aeo',this)"><span class="nav-dot"></span> AEO — Snippets</div>
+      <div class="nav-item" onclick="showSection('geo',this)"><span class="nav-dot"></span> GEO — IAs</div>
     </div>
 
     <div class="sidebar-section" style="flex:1;display:flex;flex-direction:column;min-height:0">
-      <div class="sidebar-section-label" style="display:flex;align-items:center;justify-content:space-between">
+      <div class="sidebar-section-label">
         Clientes
-        <button onclick="openAddClient()" style="background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:16px;line-height:1;padding:0" title="Agregar cliente">+</button>
+        <button onclick="openAddClient()" style="background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:18px;line-height:1;padding:0" title="Agregar cliente">+</button>
       </div>
       <div class="client-list" id="client-list"></div>
-      <div style="padding:6px 8px;margin-top:4px">
+      <div style="padding:4px 0 6px">
         <div class="nav-item" id="nav-connect" onclick="showScreen('auth')" style="padding:6px 8px">
           <span class="nav-dot"></span> Conectar manualmente
         </div>
@@ -463,12 +201,10 @@ body {
       </div>
     </div>
 
-    <div class="sidebar-footer">
-      Datos vía <span>Google Search Console API</span>
-    </div>
+    <div class="sidebar-footer">Datos vía <span>Google Search Console API</span></div>
   </aside>
 
-  <!-- MODAL AGREGAR CLIENTE -->
+  <!-- MODAL -->
   <div class="modal-overlay hidden" id="modal-add" onclick="if(event.target===this)closeModal()">
     <div class="modal">
       <div class="modal-title">Agregar cliente</div>
@@ -481,21 +217,18 @@ body {
         <input class="field-input" type="text" id="m-url" placeholder="https://dominio.cl"/>
       </div>
       <div class="field">
-        <label class="field-label">API Key</label>
-        <input class="field-input" type="password" id="m-key" placeholder="AIzaSy..."/>
+        <label class="field-label">API Key (opcional)</label>
+        <input class="field-input" type="password" id="m-key" placeholder="AIzaSy... (dejar vacío si usas OAuth)"/>
       </div>
       <div class="error-msg" id="modal-error"></div>
       <div class="modal-actions">
-        <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
-        <button class="btn btn-primary" style="width:auto" onclick="saveClient()">Guardar cliente</button>
+        <button class="btn-ghost" onclick="closeModal()">Cancelar</button>
+        <button class="btn btn-primary" style="width:auto" onclick="saveClient()">Guardar</button>
       </div>
     </div>
   </div>
 
-  <!-- ═══ MAIN ═══ -->
   <div class="main">
-
-    <!-- TOPBAR -->
     <div class="topbar">
       <div class="topbar-left">
         <span class="topbar-crumb" id="topbar-agency">Agencia</span>
@@ -511,569 +244,332 @@ body {
       </div>
     </div>
 
-    <!-- CONTENT -->
     <div class="content">
 
-      <!-- ══ AUTH SCREEN ══ -->
+      <!-- AUTH -->
       <div class="screen active" id="screen-auth">
         <div class="auth-wrap">
           <div class="auth-eyebrow">Google Search Console</div>
           <h1 class="auth-heading">Conectar propiedad</h1>
-          <p class="auth-sub">Ingresa tus credenciales para visualizar el rendimiento real de búsqueda del cliente.</p>
-
-          <div class="card">
-            <div class="field">
-              <label class="field-label" for="f-key">API Key</label>
-              <input class="field-input" type="password" id="f-key" placeholder="AIzaSy..."/>
-            </div>
-            <div class="field">
-              <label class="field-label" for="f-url">URL de la propiedad</label>
-              <input class="field-input" type="text" id="f-url" placeholder="https://dominio.cl"/>
-            </div>
-            <div class="field">
-              <label class="field-label" for="f-name">Nombre del cliente</label>
-              <input class="field-input" type="text" id="f-name" placeholder="Nombre visible en el reporte"/>
-            </div>
-            <div class="mt8">
-              <button class="btn btn-primary" id="btn-connect" onclick="connectApiKey()">Conectar</button>
-            </div>
-            <div class="error-msg" id="auth-error"></div>
-          </div>
-
+          <p class="auth-sub">Inicia sesión con OAuth para visualizar los datos reales de búsqueda del cliente.</p>
           <div class="card">
             <button class="btn btn-outline" onclick="connectOAuth()">
               <svg width="14" height="14" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20H24v8h11.3C33.6 33.1 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.1 8 3l5.7-5.7C34.5 6.5 29.5 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20c11 0 19.7-8 19.7-20 0-1.3-.1-2.7-.4-4z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 16 19 13 24 13c3.1 0 5.9 1.1 8 3l5.7-5.7C34.5 6.5 29.5 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-1.9 13.5-5l-6.2-5.2C29.4 35.6 26.8 36 24 36c-5.1 0-9.5-2.9-11.2-7l-6.5 5C9.8 40 16.4 44 24 44z"/><path fill="#1976D2" d="M43.6 20H24v8h11.3c-.9 2.4-2.5 4.4-4.6 5.8l6.2 5.2C40.9 35.4 44 30.1 44 24c0-1.3-.1-2.7-.4-4z"/></svg>
-              Iniciar con OAuth (recomendado)
+              Iniciar con Google OAuth
             </button>
-            <p class="help-note mt8">
-              OAuth requiere un Client ID en Google Cloud Console con el scope <code>webmasters.readonly</code>.<br>
-              Tu token nunca sale de este navegador.
-            </p>
+            <p class="help-note mt8">Serás redirigido a Google para autorizar el acceso. Tu token nunca sale de este navegador.</p>
+          </div>
+          <div class="card">
+            <div class="field">
+              <label class="field-label">URL de la propiedad</label>
+              <input class="field-input" type="text" id="f-url" placeholder="https://dominio.cl"/>
+            </div>
+            <div class="field">
+              <label class="field-label">Nombre del cliente</label>
+              <input class="field-input" type="text" id="f-name" placeholder="Nombre visible en el reporte"/>
+            </div>
+            <div class="mt8">
+              <button class="btn btn-primary" id="btn-manual" onclick="connectManual()">Conectar con token activo</button>
+            </div>
+            <div class="error-msg" id="auth-error"></div>
+            <p class="help-note mt8">Usa este formulario después de autenticarte con OAuth arriba.</p>
           </div>
         </div>
       </div>
 
-      <!-- ══ DASHBOARD SCREEN ══ -->
+      <!-- DASHBOARD -->
       <div class="screen" id="screen-dashboard">
-
         <div class="page-header">
-          <div class="page-header-left">
+          <div>
             <div class="page-title" id="dash-title">Dashboard SEO</div>
-            <div class="page-sub" id="dash-sub">Cargando...</div>
+            <div class="page-sub" id="dash-sub">—</div>
           </div>
-          <div class="page-header-right">
-            <div class="range-tabs">
-              <button class="range-tab active" onclick="setRange(28,this)">28d</button>
-              <button class="range-tab" onclick="setRange(56,this)">56d</button>
-              <button class="range-tab" onclick="setRange(84,this)">84d</button>
-              <button class="range-tab" onclick="setRange(90,this)">90d</button>
-            </div>
+          <div class="range-tabs">
+            <button class="range-tab active" onclick="setRange(28,this)">28d</button>
+            <button class="range-tab" onclick="setRange(56,this)">56d</button>
+            <button class="range-tab" onclick="setRange(84,this)">84d</button>
+            <button class="range-tab" onclick="setRange(90,this)">90d</button>
           </div>
         </div>
-
-        <!-- KPIs -->
         <div class="kpi-grid">
-          <div class="kpi-card accent">
-            <div class="kpi-tag">Clics totales</div>
-            <div class="kpi-value" id="k-clicks">—</div>
-            <div class="kpi-delta" id="k-clicks-d"></div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-tag">Impresiones</div>
-            <div class="kpi-value" id="k-impr">—</div>
-            <div class="kpi-delta" id="k-impr-d"></div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-tag">CTR promedio</div>
-            <div class="kpi-value" id="k-ctr">—</div>
-            <div class="kpi-delta" id="k-ctr-d"></div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-tag">Posición media</div>
-            <div class="kpi-value" id="k-pos">—</div>
-            <div class="kpi-delta" id="k-pos-d"></div>
-          </div>
+          <div class="kpi-card accent"><div class="kpi-tag">Clics totales</div><div class="kpi-value" id="k-clicks">—</div><div class="kpi-delta" id="k-clicks-d"></div></div>
+          <div class="kpi-card"><div class="kpi-tag">Impresiones</div><div class="kpi-value" id="k-impr">—</div><div class="kpi-delta" id="k-impr-d"></div></div>
+          <div class="kpi-card"><div class="kpi-tag">CTR promedio</div><div class="kpi-value" id="k-ctr">—</div><div class="kpi-delta" id="k-ctr-d"></div></div>
+          <div class="kpi-card"><div class="kpi-tag">Posición media</div><div class="kpi-value" id="k-pos">—</div><div class="kpi-delta" id="k-pos-d"></div></div>
         </div>
-
-        <!-- Row: chart + snippets -->
         <div class="row-3">
           <div class="panel">
-            <div class="panel-head">
-              <span class="panel-title">Clics e impresiones</span>
-              <span class="panel-tag tag-gsc">GSC live</span>
-            </div>
-            <div class="panel-body">
-              <div class="chart-wrap">
-                <canvas id="chart-timeline" role="img" aria-label="Evolución de clics e impresiones"></canvas>
-              </div>
-            </div>
+            <div class="panel-head"><span class="panel-title">Clics e impresiones</span><span class="panel-tag tag-gsc">GSC live</span></div>
+            <div class="panel-body"><div class="chart-wrap"><canvas id="chart-timeline"></canvas></div></div>
           </div>
           <div class="panel">
-            <div class="panel-head">
-              <span class="panel-title">Featured Snippets</span>
-              <span class="panel-tag tag-aeo">AEO</span>
-            </div>
+            <div class="panel-head"><span class="panel-title">Featured Snippets</span><span class="panel-tag tag-aeo">AEO</span></div>
             <div class="panel-body" id="snippets-body"></div>
           </div>
         </div>
-
-        <!-- Row: keywords + CTR -->
         <div class="row-2">
           <div class="panel">
-            <div class="panel-head">
-              <span class="panel-title">Top keywords</span>
-              <span class="panel-tag tag-live">Live</span>
-            </div>
+            <div class="panel-head"><span class="panel-title">Top keywords</span><span class="panel-tag tag-live">Live</span></div>
             <div class="panel-body" style="padding:0 18px 14px">
-              <table class="kw-table">
-                <thead><tr>
-                  <th>Keyword</th><th>Pos.</th><th>Clics</th><th>CTR</th><th>Δ pos.</th>
-                </tr></thead>
-                <tbody id="kw-body"></tbody>
-              </table>
+              <table class="kw-table"><thead><tr><th>Keyword</th><th>Pos.</th><th>Clics</th><th>CTR</th><th>Δ</th></tr></thead><tbody id="kw-body"></tbody></table>
             </div>
           </div>
           <div class="panel">
-            <div class="panel-head">
-              <span class="panel-title">CTR por query</span>
-              <span class="panel-tag tag-gsc">GSC</span>
-            </div>
-            <div class="panel-body">
-              <div id="ctr-body"></div>
-              <div class="chart-wrap" style="height:160px;margin-top:14px">
-                <canvas id="chart-pos" role="img" aria-label="Distribución de posiciones"></canvas>
-              </div>
-            </div>
+            <div class="panel-head"><span class="panel-title">CTR por query</span><span class="panel-tag tag-gsc">GSC</span></div>
+            <div class="panel-body"><div id="ctr-body"></div><div class="chart-wrap" style="height:160px;margin-top:14px"><canvas id="chart-pos"></canvas></div></div>
           </div>
         </div>
-
       </div>
 
-      <!-- ══ AEO SCREEN ══ -->
+      <!-- AEO -->
       <div class="screen" id="screen-aeo">
-        <div class="page-header">
-          <div>
-            <div class="page-title">AEO — Answer Engine Optimization</div>
-            <div class="page-sub">Featured snippets, PAA y SERP features ganados</div>
-          </div>
-        </div>
+        <div class="page-header"><div><div class="page-title">AEO — Answer Engine Optimization</div><div class="page-sub">Featured snippets, PAA y SERP features ganados</div></div></div>
         <div class="row-2">
-          <div class="panel">
-            <div class="panel-head"><span class="panel-title">Snippets ganados por semana</span><span class="panel-tag tag-aeo">AEO</span></div>
-            <div class="panel-body"><div class="chart-wrap"><canvas id="chart-aeo" role="img" aria-label="Snippets por semana"></canvas></div></div>
-          </div>
-          <div class="panel">
-            <div class="panel-head"><span class="panel-title">Snippets activos</span><span class="panel-tag tag-live">Live</span></div>
-            <div class="panel-body" id="snippets-full"></div>
-          </div>
+          <div class="panel"><div class="panel-head"><span class="panel-title">Snippets por semana</span><span class="panel-tag tag-aeo">AEO</span></div><div class="panel-body"><div class="chart-wrap"><canvas id="chart-aeo"></canvas></div></div></div>
+          <div class="panel"><div class="panel-head"><span class="panel-title">Snippets activos</span><span class="panel-tag tag-live">Live</span></div><div class="panel-body" id="snippets-full"></div></div>
         </div>
       </div>
 
-      <!-- ══ GEO SCREEN ══ -->
+      <!-- GEO -->
       <div class="screen" id="screen-geo">
-        <div class="page-header">
-          <div>
-            <div class="page-title">GEO — Generative Engine Optimization</div>
-            <div class="page-sub">Visibilidad de la marca en respuestas de IA</div>
-          </div>
-        </div>
+        <div class="page-header"><div><div class="page-title">GEO — Generative Engine Optimization</div><div class="page-sub">Visibilidad de la marca en respuestas de IA</div></div></div>
         <div class="row-2">
-          <div class="panel">
-            <div class="panel-head"><span class="panel-title">Visibilidad por plataforma</span><span class="panel-tag tag-geo">GEO</span></div>
-            <div class="panel-body" id="geo-body"></div>
-          </div>
-          <div class="panel">
-            <div class="panel-head"><span class="panel-title">Evolución 90 días</span><span class="panel-tag tag-geo">GEO</span></div>
-            <div class="panel-body"><div class="chart-wrap"><canvas id="chart-geo" role="img" aria-label="Evolución GEO"></canvas></div></div>
-          </div>
+          <div class="panel"><div class="panel-head"><span class="panel-title">Visibilidad por plataforma</span><span class="panel-tag tag-geo">GEO</span></div><div class="panel-body" id="geo-body"></div></div>
+          <div class="panel"><div class="panel-head"><span class="panel-title">Evolución 90 días</span><span class="panel-tag tag-geo">GEO</span></div><div class="panel-body"><div class="chart-wrap"><canvas id="chart-geo"></canvas></div></div></div>
         </div>
       </div>
 
-    </div><!-- /content -->
-  </div><!-- /main -->
-</div><!-- /shell -->
+    </div>
+  </div>
+</div>
 
 <script>
-/* ════════════════════════════════════════
-   STATE
-════════════════════════════════════════ */
-const S = { apiKey: null, siteUrl: null, token: null, days: 28, charts: {}, clientName: '', activeId: null };
+const S = { token:null, siteUrl:null, days:28, charts:{}, clientName:'', activeId:null };
 const CLIENT_ID = '971004179651-mnrj4pj6k2gjdve67ffsess1octaa38t.apps.googleusercontent.com';
+const REDIRECT  = 'https://paulete-bb.github.io/seo-dashboard';
+const SCOPE     = 'https://www.googleapis.com/auth/webmasters.readonly';
 
-/* ════════════════════════════════════════
-   CLIENTES — localStorage
-════════════════════════════════════════ */
-function getClients() {
-  try { return JSON.parse(localStorage.getItem('bb_seo_clients') || '[]'); } catch(e) { return []; }
+/* ── INIT ── */
+document.getElementById('topbar-date').textContent = new Date().toLocaleDateString('es-CL',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+renderClientList();
+if (location.hash.includes('access_token')) handleOAuthReturn();
+
+/* ── LOGO ── */
+function uploadLogo(input) {
+  const f = input.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = e => {
+    document.getElementById('logo-img').src = e.target.result;
+    document.getElementById('logo-img').classList.remove('hidden');
+    document.getElementById('logo-placeholder').classList.add('hidden');
+  };
+  r.readAsDataURL(f);
 }
-function saveClients(list) {
-  localStorage.setItem('bb_seo_clients', JSON.stringify(list));
+
+/* ── NAV ── */
+function showSection(name, el) {
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  if(el) el.classList.add('active');
+  const titles = {dashboard:'Dashboard SEO', aeo:'AEO — Snippets', geo:'GEO — IAs'};
+  document.getElementById('topbar-section').textContent = titles[name]||name;
+  if(!S.token && !S.siteUrl){ showScreen('auth'); return; }
+  showScreen(name);
+  if(name==='aeo') renderAEO();
+  if(name==='geo') renderGEO();
 }
+
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  const map = {auth:'screen-auth', dashboard:'screen-dashboard', aeo:'screen-aeo', geo:'screen-geo'};
+  document.getElementById(map[name]||'screen-auth').classList.add('active');
+}
+
+/* ── CLIENTES ── */
+function getClients(){ try{ return JSON.parse(localStorage.getItem('bb_clients')||'[]'); }catch(e){ return []; } }
+function saveClients(l){ localStorage.setItem('bb_clients', JSON.stringify(l)); }
 
 function renderClientList() {
   const list = getClients();
   const el = document.getElementById('client-list');
-  if (list.length === 0) {
-    el.innerHTML = `<div style="padding:8px 8px;font-size:11px;color:var(--gray-400);font-family:'DM Mono',monospace">Sin clientes guardados.<br>Usa + para agregar.</div>`;
-    return;
-  }
-  el.innerHTML = list.map(c => `
+  if(!list.length){ el.innerHTML=`<div style="padding:8px;font-size:11px;color:var(--gray-400);font-family:'DM Mono',monospace">Sin clientes. Usa + para agregar.</div>`; return; }
+  el.innerHTML = list.map(c=>`
     <div class="client-item ${S.activeId===c.id?'client-active':''}" onclick="connectClient('${c.id}')">
       <div class="client-avatar">${c.name[0].toUpperCase()}</div>
       <div class="client-info">
         <div class="client-name">${c.name}</div>
-        <div class="client-url">${c.url.replace('https://','').replace('http://','')}</div>
+        <div class="client-url">${c.url.replace(/https?:\/\//,'')}</div>
       </div>
       <button class="client-del" onclick="deleteClient(event,'${c.id}')" title="Eliminar">×</button>
     </div>`).join('');
 }
 
-function openAddClient() {
-  document.getElementById('modal-add').classList.remove('hidden');
-  document.getElementById('m-name').value = '';
-  document.getElementById('m-url').value  = '';
-  document.getElementById('m-key').value  = '';
-  document.getElementById('modal-error').classList.remove('visible');
-  setTimeout(() => document.getElementById('m-name').focus(), 50);
-}
-
-function closeModal() {
-  document.getElementById('modal-add').classList.add('hidden');
-}
+function openAddClient(){ document.getElementById('modal-add').classList.remove('hidden'); document.getElementById('modal-error').classList.remove('visible'); setTimeout(()=>document.getElementById('m-name').focus(),50); }
+function closeModal(){ document.getElementById('modal-add').classList.add('hidden'); }
 
 function saveClient() {
-  const name = document.getElementById('m-name').value.trim();
-  const url  = document.getElementById('m-url').value.trim();
-  const key  = document.getElementById('m-key').value.trim();
-  if (!name || !url || !key) {
-    const er = document.getElementById('modal-error');
-    er.textContent = '⚠ Completa todos los campos.'; er.classList.add('visible'); return;
-  }
-  const list = getClients();
-  list.push({ id: Date.now().toString(), name, url, key });
-  saveClients(list);
-  closeModal();
-  renderClientList();
+  const name=document.getElementById('m-name').value.trim();
+  const url=document.getElementById('m-url').value.trim();
+  if(!name||!url){ const e=document.getElementById('modal-error'); e.textContent='⚠ Nombre y URL son obligatorios.'; e.classList.add('visible'); return; }
+  const list=getClients();
+  list.push({id:Date.now().toString(), name, url, key:document.getElementById('m-key').value.trim()});
+  saveClients(list); closeModal(); renderClientList();
 }
 
-function deleteClient(e, id) {
-  e.stopPropagation();
-  const list = getClients().filter(c => c.id !== id);
-  saveClients(list);
-  if (S.activeId === id) disconnect();
-  else renderClientList();
-}
+function deleteClient(e,id){ e.stopPropagation(); saveClients(getClients().filter(c=>c.id!==id)); if(S.activeId===id) disconnect(); else renderClientList(); }
 
 async function connectClient(id) {
-  const client = getClients().find(c => c.id === id);
-  if (!client) return;
-  S.activeId = id;
+  const c = getClients().find(x=>x.id===id); if(!c) return;
+  S.activeId=id; S.siteUrl=c.url; S.clientName=c.name;
   renderClientList();
-  const btn = document.querySelector(`[onclick="connectClient('${id}')"] .client-name`);
-  const prevText = btn?.textContent;
-  if (btn) btn.textContent = 'Conectando...';
-  try {
-    const res = await fetch(`https://www.googleapis.com/webmasters/v3/sites/${encodeURIComponent(client.url)}?key=${client.key}`);
-    if (!res.ok) { const e = await res.json(); throw new Error(e.error?.message || 'Error de autenticación'); }
-    S.apiKey = client.key; S.siteUrl = client.url; S.clientName = client.name;
-    enterDashboard();
-  } catch(e) {
-    S.activeId = null;
-    renderClientList();
-    if (btn) btn.textContent = prevText;
-    alert('⚠ ' + e.message);
-  }
+  if(S.token){ enterDashboard(); return; }
+  connectOAuth();
 }
 
-/* ════════════════════════════════════════
-   INIT
-════════════════════════════════════════ */
-document.getElementById('topbar-date').textContent = new Date().toLocaleDateString('es-CL', { weekday:'short', day:'numeric', month:'short', year:'numeric' });
-renderClientList();
-
-if (window.location.hash.includes('access_token')) handleOAuthReturn();
-
-/* ════════════════════════════════════════
-   LOGO UPLOAD
-════════════════════════════════════════ */
-function uploadLogo(input) {
-  const file = input.files[0]; if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    const img = document.getElementById('logo-img');
-    const ph  = document.getElementById('logo-placeholder');
-    img.src = e.target.result;
-    img.classList.remove('hidden');
-    ph.classList.add('hidden');
-  };
-  reader.readAsDataURL(file);
-}
-
-/* ════════════════════════════════════════
-   NAVIGATION
-════════════════════════════════════════ */
-function showSection(name) {
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  event.currentTarget.classList.add('active');
-  const titles = { dashboard:'Dashboard SEO', aeo:'AEO — Snippets', geo:'GEO — IAs' };
-  document.getElementById('topbar-section').textContent = titles[name] || name;
-  if (!S.siteUrl && !S.token) { showScreen('auth'); return; }
-  showScreen(name);
-  if (name === 'aeo')  renderAEO();
-  if (name === 'geo')  renderGEO();
-}
-
-function showScreen(name) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById('screen-' + (name === 'dashboard' ? 'dashboard' : name === 'auth' ? 'auth' : name)).classList.add('active');
-}
-
-/* ════════════════════════════════════════
-   AUTH — API KEY
-════════════════════════════════════════ */
-async function connectApiKey() {
-  const key  = document.getElementById('f-key').value.trim();
-  const url  = document.getElementById('f-url').value.trim();
-  const name = document.getElementById('f-name').value.trim();
-  if (!key || !url) return showError('Completa API Key y URL.');
-  const btn = document.getElementById('btn-connect');
-  btn.disabled = true; btn.textContent = 'Verificando...';
-  try {
-    const res = await fetch(`https://www.googleapis.com/webmasters/v3/sites/${encodeURIComponent(url)}?key=${key}`);
-    if (!res.ok) { const e = await res.json(); throw new Error(e.error?.message || 'Error de autenticación'); }
-    S.apiKey = key; S.siteUrl = url; S.clientName = name || url;
-    enterDashboard();
-  } catch(e) {
-    showError(e.message);
-    btn.disabled = false; btn.textContent = 'Conectar';
-  }
-}
-
+/* ── OAUTH ── */
 function connectOAuth() {
   const state = Math.random().toString(36).slice(2);
   sessionStorage.setItem('os', state);
-  const p = new URLSearchParams({ client_id: CLIENT_ID, redirect_uri: location.href.split('?')[0].split('#')[0], response_type:'token', scope:'https://www.googleapis.com/auth/webmasters.readonly', state });
+  const p = new URLSearchParams({ client_id:CLIENT_ID, redirect_uri:REDIRECT, response_type:'token', scope:SCOPE, state });
   location.href = 'https://accounts.google.com/o/oauth2/v2/auth?' + p;
 }
 
 async function handleOAuthReturn() {
   const h = new URLSearchParams(location.hash.slice(1));
   const token = h.get('access_token');
-  if (!token) return;
-  location.hash = '';
+  if(!token) return;
+  history.replaceState(null,'',location.pathname);
   S.token = token;
   try {
-    const res = await fetch('https://www.googleapis.com/webmasters/v3/sites', { headers: { Authorization: `Bearer ${token}` } });
+    const res = await fetch('https://www.googleapis.com/webmasters/v3/sites',{headers:{Authorization:`Bearer ${token}`}});
     const data = await res.json();
-    S.siteUrl = data.siteEntry?.[0]?.siteUrl || '';
-    S.clientName = S.siteUrl;
+    const sites = data.siteEntry||[];
+    if(!S.siteUrl && sites.length) S.siteUrl = sites[0].siteUrl;
+    if(!S.clientName) S.clientName = (S.siteUrl||'Cliente').replace(/https?:\/\//,'').replace(/\/$/,'');
     enterDashboard();
-  } catch(e) { showError(e.message); }
+  } catch(e){ showAuthError(e.message); }
 }
 
-function showError(msg) {
-  const el = document.getElementById('auth-error');
-  el.textContent = '⚠ ' + msg; el.classList.add('visible');
+function connectManual() {
+  const url=document.getElementById('f-url').value.trim();
+  const name=document.getElementById('f-name').value.trim();
+  if(!S.token){ showAuthError('Primero autentica con OAuth (botón de Google arriba).'); return; }
+  if(!url){ showAuthError('Ingresa la URL de la propiedad.'); return; }
+  S.siteUrl=url; S.clientName=name||url.replace(/https?:\/\//,'');
+  enterDashboard();
 }
 
-/* ════════════════════════════════════════
-   ENTER DASHBOARD
-════════════════════════════════════════ */
+function showAuthError(msg){ const e=document.getElementById('auth-error'); e.textContent='⚠ '+msg; e.classList.add('visible'); }
+
+/* ── DASHBOARD ── */
 function enterDashboard() {
-  const pill = document.getElementById('status-pill');
-  pill.classList.add('connected');
-  document.getElementById('status-text').textContent = 'Conectado';
+  document.getElementById('status-pill').classList.add('connected');
+  document.getElementById('status-text').textContent='Conectado';
   document.getElementById('nav-connect').classList.add('hidden');
   document.getElementById('nav-disconnect').classList.remove('hidden');
-  document.getElementById('topbar-agency').textContent = S.clientName || 'Cliente';
-  document.getElementById('agency-name').textContent   = S.clientName || 'Tu Agencia';
-  const ph = document.getElementById('logo-placeholder');
-  ph.textContent = (S.clientName || 'A')[0].toUpperCase();
+  document.getElementById('topbar-agency').textContent=S.clientName;
+  document.getElementById('agency-name').textContent=S.clientName;
+  document.getElementById('logo-placeholder').textContent=(S.clientName||'A')[0].toUpperCase();
   showScreen('dashboard');
   loadDashboard();
 }
 
 function disconnect() {
-  Object.assign(S, { apiKey:null, siteUrl:null, token:null, days:28, clientName:'', activeId:null });
+  Object.assign(S,{token:null,siteUrl:null,days:28,clientName:'',activeId:null});
   destroyCharts();
   document.getElementById('status-pill').classList.remove('connected');
-  document.getElementById('status-text').textContent = 'Sin conectar';
+  document.getElementById('status-text').textContent='Sin conectar';
   document.getElementById('nav-connect').classList.remove('hidden');
   document.getElementById('nav-disconnect').classList.add('hidden');
   document.getElementById('auth-error').classList.remove('visible');
-  document.getElementById('btn-connect').disabled = false;
-  document.getElementById('btn-connect').textContent = 'Conectar';
-  document.getElementById('agency-name').textContent = 'Tu Agencia';
-  document.getElementById('logo-placeholder').textContent = 'A';
+  document.getElementById('agency-name').textContent='Tu Agencia';
+  document.getElementById('logo-placeholder').textContent='A';
   renderClientList();
   showScreen('auth');
 }
 
-function setRange(d, btn) {
-  S.days = d;
-  document.querySelectorAll('.range-tab').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  loadDashboard();
-}
+function setRange(d,btn){ S.days=d; document.querySelectorAll('.range-tab').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); loadDashboard(); }
 
-/* ════════════════════════════════════════
-   API
-════════════════════════════════════════ */
+/* ── API ── */
 async function gsc(body) {
-  const key  = S.apiKey ? '?key=' + S.apiKey : '';
-  const hdrs = { 'Content-Type': 'application/json' };
-  if (S.token) hdrs['Authorization'] = `Bearer ${S.token}`;
-  const res = await fetch(`https://www.googleapis.com/webmasters/v3/sites/${encodeURIComponent(S.siteUrl)}/searchAnalytics/query${key}`, { method:'POST', headers:hdrs, body:JSON.stringify(body) });
-  if (!res.ok) { const e = await res.json(); throw new Error(e.error?.message); }
+  const res = await fetch(`https://www.googleapis.com/webmasters/v3/sites/${encodeURIComponent(S.siteUrl)}/searchAnalytics/query`,
+    {method:'POST',headers:{Authorization:`Bearer ${S.token}`,'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(!res.ok){ const e=await res.json(); throw new Error(e.error?.message||`Error ${res.status}`); }
   return res.json();
 }
 
-function dt(ago) { const d = new Date(); d.setDate(d.getDate() - ago); return d.toISOString().slice(0,10); }
-function fmt(n)  { if (n==null) return '—'; if (n>=1e6) return (n/1e6).toFixed(1)+'M'; if (n>=1000) return (n/1000).toFixed(1)+'K'; return Math.round(n).toLocaleString('es-CL'); }
-function pct(n)  { return n!=null ? (n*100).toFixed(1)+'%' : '—'; }
+function dt(ago){ const d=new Date(); d.setDate(d.getDate()-ago); return d.toISOString().slice(0,10); }
+function fmt(n){ if(n==null)return'—'; if(n>=1e6)return(n/1e6).toFixed(1)+'M'; if(n>=1000)return(n/1000).toFixed(1)+'K'; return Math.round(n).toLocaleString('es-CL'); }
+function pct(n){ return n!=null?(n*100).toFixed(1)+'%':'—'; }
+function dHtml(c,p,low){ if(!c||!p)return''; const d=((c-p)/Math.abs(p))*100,abs=Math.abs(d).toFixed(1)+'%',good=low?d<0:d>0; return `<span class="${good?'delta-up':'delta-down'}">${d>0?'▲':'▼'} ${abs} vs período anterior</span>`; }
+function destroyCharts(){ Object.values(S.charts).forEach(c=>{try{c.destroy();}catch(e){}}); S.charts={}; }
 
-function deltaHtml(curr, prev, lowerBetter) {
-  if (!curr || !prev) return '';
-  const d   = ((curr - prev) / Math.abs(prev)) * 100;
-  const abs = Math.abs(d).toFixed(1) + '%';
-  const good = lowerBetter ? d < 0 : d > 0;
-  const cls  = good ? 'delta-up' : 'delta-down';
-  return `<span class="${cls}">${d>0?'▲':'▼'} ${abs} vs período anterior</span>`;
-}
-
-/* ════════════════════════════════════════
-   LOAD DASHBOARD
-════════════════════════════════════════ */
+/* ── LOAD ── */
 async function loadDashboard() {
-  document.getElementById('dash-sub').textContent = `${S.siteUrl} · últimos ${S.days} días`;
-  document.getElementById('dash-title').textContent = S.clientName || 'Dashboard SEO';
-  setKpiLoading();
+  document.getElementById('dash-title').textContent=S.clientName||'Dashboard SEO';
+  document.getElementById('dash-sub').textContent=`${S.siteUrl} · últimos ${S.days} días`;
+  ['k-clicks','k-impr','k-ctr','k-pos'].forEach(id=>{document.getElementById(id).textContent='···';document.getElementById(id+'-d').innerHTML='';});
   destroyCharts();
-  try {
-    await Promise.all([ loadSummary(), loadTimeline(), loadKeywords() ]);
-    renderSnippetsMini();
-  } catch(e) { console.error(e); }
+  try{ await Promise.all([loadSummary(),loadTimeline(),loadKeywords()]); renderSnippetsMini(); }
+  catch(e){ console.error(e); }
 }
 
 async function loadSummary() {
-  const e=dt(3), s=dt(S.days+3), ps=dt(S.days*2+3);
-  const [c,p] = await Promise.all([
-    gsc({ startDate:s, endDate:e, rowLimit:1 }),
-    gsc({ startDate:ps, endDate:s, rowLimit:1 })
-  ]);
-  const r=c.rows?.[0]||{}, q=p.rows?.[0]||{};
-  setKpi('k-clicks', fmt(r.clicks),        deltaHtml(r.clicks,      q.clicks,      false));
-  setKpi('k-impr',   fmt(r.impressions),   deltaHtml(r.impressions,  q.impressions, false));
-  setKpi('k-ctr',    pct(r.ctr),           deltaHtml(r.ctr,         q.ctr,         false));
-  setKpi('k-pos',    r.position?.toFixed(1),deltaHtml(r.position,   q.position,    true));
+  const e=dt(3),s=dt(S.days+3),ps=dt(S.days*2+3);
+  const [c,p]=await Promise.all([gsc({startDate:s,endDate:e,rowLimit:1}),gsc({startDate:ps,endDate:s,rowLimit:1})]);
+  const r=c.rows?.[0]||{},q=p.rows?.[0]||{};
+  document.getElementById('k-clicks').textContent=fmt(r.clicks); document.getElementById('k-clicks-d').innerHTML=dHtml(r.clicks,q.clicks,false);
+  document.getElementById('k-impr').textContent=fmt(r.impressions); document.getElementById('k-impr-d').innerHTML=dHtml(r.impressions,q.impressions,false);
+  document.getElementById('k-ctr').textContent=pct(r.ctr); document.getElementById('k-ctr-d').innerHTML=dHtml(r.ctr,q.ctr,false);
+  document.getElementById('k-pos').textContent=r.position?.toFixed(1)||'—'; document.getElementById('k-pos-d').innerHTML=dHtml(r.position,q.position,true);
 }
 
 async function loadTimeline() {
-  const data = await gsc({ startDate:dt(S.days+3), endDate:dt(3), dimensions:['date'], rowLimit:100 });
-  const rows  = (data.rows||[]).sort((a,b)=>a.keys[0].localeCompare(b.keys[0]));
-  const labels = rows.map(r=>r.keys[0].slice(5));
-  const clicks = rows.map(r=>r.clicks);
-  const impr   = rows.map(r=>r.impressions);
-  const ctx = document.getElementById('chart-timeline').getContext('2d');
-  S.charts.tl = new Chart(ctx, {
-    type:'line',
-    data:{ labels, datasets:[
-      { label:'Clics', data:clicks, borderColor:'#e8352a', backgroundColor:'rgba(232,53,42,0.06)', tension:.4, fill:true, pointRadius:0, borderWidth:2, yAxisID:'y' },
-      { label:'Impresiones', data:impr, borderColor:'#aaaaaa', backgroundColor:'rgba(0,0,0,0.03)', tension:.4, fill:true, pointRadius:0, borderWidth:1.5, borderDash:[4,3], yAxisID:'y1' }
-    ]},
-    options:{
-      responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{ display:false } },
-      scales:{
-        x:{ ticks:{ color:'#888', font:{size:10, family:"'DM Mono', monospace"}, maxTicksLimit:8 }, grid:{ color:'#f0f0ee' } },
-        y:{ display:false }, y1:{ display:false }
-      }
-    }
-  });
+  const data=await gsc({startDate:dt(S.days+3),endDate:dt(3),dimensions:['date'],rowLimit:100});
+  const rows=(data.rows||[]).sort((a,b)=>a.keys[0].localeCompare(b.keys[0]));
+  const ctx=document.getElementById('chart-timeline').getContext('2d');
+  S.charts.tl=new Chart(ctx,{type:'line',data:{labels:rows.map(r=>r.keys[0].slice(5)),datasets:[
+    {label:'Clics',data:rows.map(r=>r.clicks),borderColor:'#e8352a',backgroundColor:'rgba(232,53,42,0.06)',tension:.4,fill:true,pointRadius:0,borderWidth:2,yAxisID:'y'},
+    {label:'Impresiones',data:rows.map(r=>r.impressions),borderColor:'#aaa',backgroundColor:'rgba(0,0,0,0.02)',tension:.4,fill:true,pointRadius:0,borderWidth:1.5,borderDash:[4,3],yAxisID:'y1'}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#888',font:{size:10},maxTicksLimit:8},grid:{color:'#f0f0ee'}},y:{display:false},y1:{display:false}}}});
 }
 
 async function loadKeywords() {
-  const e=dt(3), s=dt(S.days+3), ps=dt(S.days*2+3);
-  const [c,p] = await Promise.all([
-    gsc({ startDate:s, endDate:e, dimensions:['query'], rowLimit:10 }),
-    gsc({ startDate:ps, endDate:s, dimensions:['query'], rowLimit:30 })
-  ]);
-  const prev = {}; (p.rows||[]).forEach(r=>{ prev[r.keys[0]]=r; });
-  const tbody = document.getElementById('kw-body'); tbody.innerHTML='';
-  const ctrEl = document.getElementById('ctr-body'); ctrEl.innerHTML='';
+  const e=dt(3),s=dt(S.days+3),ps=dt(S.days*2+3);
+  const [c,p]=await Promise.all([gsc({startDate:s,endDate:e,dimensions:['query'],rowLimit:10}),gsc({startDate:ps,endDate:s,dimensions:['query'],rowLimit:30})]);
+  const prev={};(p.rows||[]).forEach(r=>{prev[r.keys[0]]=r;});
+  const tb=document.getElementById('kw-body'),cb=document.getElementById('ctr-body');
+  tb.innerHTML=''; cb.innerHTML='';
   (c.rows||[]).forEach(r=>{
-    const q=r.keys[0], pos=r.position, pr=prev[q];
-    const pc = pos<=3?'pos-t3':pos<=10?'pos-t10':pos<=20?'pos-t20':'pos-rest';
+    const q=r.keys[0],pos=r.position,pr=prev[q];
+    const pc=pos<=3?'pos-t3':pos<=10?'pos-t10':pos<=20?'pos-t20':'pos-rest';
     let chip;
-    if (!pr) chip=`<span class="chip chip-new">nuevo</span>`;
-    else { const d=Math.round(pr.position-pos); if(d>0) chip=`<span class="chip chip-up">▲${d}</span>`; else if(d<0) chip=`<span class="chip chip-dn">▼${Math.abs(d)}</span>`; else chip=`<span class="chip chip-same">—</span>`; }
-    tbody.innerHTML += `<tr><td class="kw-query" title="${q}">${q}</td><td><span class="pos-badge ${pc}">${pos.toFixed(1)}</span></td><td>${fmt(r.clicks)}</td><td>${pct(r.ctr)}</td><td>${chip}</td></tr>`;
-    const w = Math.min(100, r.ctr*100*5);
-    ctrEl.innerHTML += `<div class="ctr-row"><span class="ctr-label">${q}</span><div class="ctr-track"><div class="ctr-fill" style="width:${w}%"></div></div><span class="ctr-pct">${pct(r.ctr)}</span></div>`;
+    if(!pr) chip=`<span class="chip chip-new">nuevo</span>`;
+    else{ const d=Math.round(pr.position-pos); if(d>0)chip=`<span class="chip chip-up">▲${d}</span>`; else if(d<0)chip=`<span class="chip chip-dn">▼${Math.abs(d)}</span>`; else chip=`<span class="chip chip-same">—</span>`; }
+    tb.innerHTML+=`<tr><td class="kw-query" title="${q}">${q}</td><td><span class="pos-badge ${pc}">${pos.toFixed(1)}</span></td><td>${fmt(r.clicks)}</td><td>${pct(r.ctr)}</td><td>${chip}</td></tr>`;
+    cb.innerHTML+=`<div class="ctr-row"><span class="ctr-label">${q}</span><div class="ctr-track"><div class="ctr-fill" style="width:${Math.min(100,r.ctr*100*5)}%"></div></div><span class="ctr-pct">${pct(r.ctr)}</span></div>`;
   });
-  renderPosChart(c.rows||[]);
-}
-
-function renderPosChart(rows) {
-  const b=[0,0,0,0,0];
-  rows.forEach(r=>{ const p=r.position; if(p<=3)b[0]++;else if(p<=10)b[1]++;else if(p<=20)b[2]++;else if(p<=50)b[3]++;else b[4]++; });
-  if(S.charts.pos){try{S.charts.pos.destroy();}catch(e){}}
+  const b=[0,0,0,0,0];(c.rows||[]).forEach(r=>{const p=r.position;if(p<=3)b[0]++;else if(p<=10)b[1]++;else if(p<=20)b[2]++;else if(p<=50)b[3]++;else b[4]++;});
   const ctx=document.getElementById('chart-pos').getContext('2d');
-  S.charts.pos=new Chart(ctx,{ type:'doughnut', data:{ labels:['Top 3','Top 10','Top 20','Top 50','50+'], datasets:[{ data:b, backgroundColor:['#16a34a','#3b82f6','#e8352a','#f59e0b','#dddddd'], borderColor:'#fff', borderWidth:2 }] }, options:{ responsive:true, maintainAspectRatio:false, cutout:'70%', plugins:{ legend:{ position:'bottom', labels:{ color:'#555', font:{size:10, family:"'DM Mono', monospace"}, padding:8, boxWidth:8 } } } } });
+  S.charts.pos=new Chart(ctx,{type:'doughnut',data:{labels:['Top 3','Top 10','Top 20','Top 50','50+'],datasets:[{data:b,backgroundColor:['#16a34a','#3b82f6','#e8352a','#f59e0b','#ddd'],borderColor:'#fff',borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,cutout:'70%',plugins:{legend:{position:'bottom',labels:{color:'#555',font:{size:10},padding:8,boxWidth:8}}}}});
 }
 
-function setKpi(id,val,d){ document.getElementById(id).textContent=val||'—'; document.getElementById(id+'-d').innerHTML=d||''; }
-function setKpiLoading(){ ['k-clicks','k-impr','k-ctr','k-pos'].forEach(id=>{ document.getElementById(id).textContent='···'; document.getElementById(id+'-d').innerHTML=''; }); }
-function destroyCharts(){ Object.values(S.charts).forEach(c=>{try{c.destroy();}catch(e){}}); S.charts={}; }
+const SNIPPETS=[{type:'Párrafo',q:'¿qué es el SEO técnico?',sem:'Sem 3'},{type:'Lista',q:'cómo mejorar posicionamiento',sem:'Sem 5'},{type:'Tabla',q:'herramientas de SEO gratis',sem:'Sem 7'},{type:'Párrafo',q:'diferencia SEO vs SEM',sem:'Sem 9'},{type:'PAA',q:'velocidad de carga web 2024',sem:'Sem 11'},{type:'Lista',q:'link building estrategias',sem:'Sem 12'}];
 
-/* ════════════════════════════════════════
-   SNIPPETS (demo — GSC no los expone directo)
-════════════════════════════════════════ */
-const SNIPPETS = [
-  { type:'Párrafo', q:'¿qué es el SEO técnico?',       sem:'Sem 3' },
-  { type:'Lista',   q:'cómo mejorar posicionamiento',   sem:'Sem 5' },
-  { type:'Tabla',   q:'herramientas de SEO gratis',     sem:'Sem 7' },
-  { type:'Párrafo', q:'diferencia SEO vs SEM',          sem:'Sem 9' },
-  { type:'PAA',     q:'velocidad de carga web 2024',    sem:'Sem 11' },
-  { type:'Lista',   q:'link building estrategias',      sem:'Sem 12' },
-];
-
-function renderSnippetsMini() {
-  document.getElementById('snippets-body').innerHTML = SNIPPETS.slice(0,5).map(s=>`
-    <div class="snippet-row">
-      <span class="snippet-type">${s.type}</span>
-      <span class="snippet-query">${s.q}</span>
-      <span class="snippet-week">${s.sem}</span>
-    </div>`).join('');
-}
+function renderSnippetsMini(){ document.getElementById('snippets-body').innerHTML=SNIPPETS.slice(0,5).map(s=>`<div class="snippet-row"><span class="snippet-type">${s.type}</span><span class="snippet-query">${s.q}</span><span class="snippet-week">${s.sem}</span></div>`).join(''); }
 
 function renderAEO() {
-  document.getElementById('snippets-full').innerHTML = SNIPPETS.map(s=>`
-    <div class="snippet-row">
-      <span class="snippet-type">${s.type}</span>
-      <span class="snippet-query">${s.q}</span>
-      <span class="snippet-week">${s.sem}</span>
-    </div>`).join('');
+  document.getElementById('snippets-full').innerHTML=SNIPPETS.map(s=>`<div class="snippet-row"><span class="snippet-type">${s.type}</span><span class="snippet-query">${s.q}</span><span class="snippet-week">${s.sem}</span></div>`).join('');
   if(S.charts.aeo){try{S.charts.aeo.destroy();}catch(e){}}
   const ctx=document.getElementById('chart-aeo').getContext('2d');
-  S.charts.aeo=new Chart(ctx,{ type:'bar', data:{ labels:['S1','S2','S3','S4','S5','S6','S7','S8','S9','S10','S11','S12','S13'], datasets:[{ label:'Featured snippets', data:[0,0,1,1,2,2,2,3,4,5,5,6,6], backgroundColor:'#e8352a', borderRadius:4, borderSkipped:false },{ label:'PAA', data:[2,2,3,4,5,6,7,8,9,11,12,13,14], backgroundColor:'#f0f0ee', borderRadius:4, borderSkipped:false }] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ labels:{ color:'#555', font:{size:10, family:"'DM Mono', monospace"}, boxWidth:8 } } }, scales:{ x:{ ticks:{ color:'#888', font:{size:10} }, grid:{ color:'#f0f0ee' } }, y:{ ticks:{ color:'#888', font:{size:10} }, grid:{ color:'#f0f0ee' } } } } });
+  S.charts.aeo=new Chart(ctx,{type:'bar',data:{labels:['S1','S2','S3','S4','S5','S6','S7','S8','S9','S10','S11','S12','S13'],datasets:[{label:'Featured snippets',data:[0,0,1,1,2,2,2,3,4,5,5,6,6],backgroundColor:'#e8352a',borderRadius:4},{label:'PAA',data:[2,2,3,4,5,6,7,8,9,11,12,13,14],backgroundColor:'#f0f0ee',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#555',font:{size:10},boxWidth:8}}},scales:{x:{ticks:{color:'#888',font:{size:10}},grid:{color:'#f0f0ee'}},y:{ticks:{color:'#888',font:{size:10}},grid:{color:'#f0f0ee'}}}}});
 }
 
 function renderGEO() {
-  const platforms = [
-    { name:'ChatGPT / GPT-4o',    prev:8,  curr:74 },
-    { name:'Perplexity AI',        prev:5,  curr:68 },
-    { name:'Google AI Overview',   prev:0,  curr:55 },
-    { name:'Claude / Copilot',     prev:3,  curr:61 },
-  ];
-  document.getElementById('geo-body').innerHTML = platforms.map(p=>`
-    <div class="ai-block">
-      <div class="ai-name">${p.name} <span>${p.curr}%</span></div>
-      <div class="ai-track"><div class="ai-fill" style="width:${p.curr}%"></div></div>
-    </div>`).join('');
+  const platforms=[{name:'ChatGPT / GPT-4o',prev:8,curr:74},{name:'Perplexity AI',prev:5,curr:68},{name:'Google AI Overview',prev:0,curr:55},{name:'Claude / Copilot',prev:3,curr:61}];
+  document.getElementById('geo-body').innerHTML=platforms.map(p=>`<div class="ai-block"><div class="ai-name">${p.name}<span>${p.curr}%</span></div><div class="ai-track"><div class="ai-fill" style="width:${p.curr}%"></div></div></div>`).join('');
   if(S.charts.geo){try{S.charts.geo.destroy();}catch(e){}}
   const ctx=document.getElementById('chart-geo').getContext('2d');
-  S.charts.geo=new Chart(ctx,{ type:'line', data:{ labels:['Sem 1','Sem 4','Sem 8','Sem 13'], datasets:platforms.map((p,i)=>({ label:p.name, data:[p.prev, Math.round(p.prev+(p.curr-p.prev)*0.3), Math.round(p.prev+(p.curr-p.prev)*0.7), p.curr], borderColor:['#e8352a','#111111','#888888','#dddddd'][i], tension:.4, pointRadius:3, borderWidth:2, fill:false })) }, options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ labels:{ color:'#555', font:{size:10, family:"'DM Mono', monospace"}, boxWidth:8 } } }, scales:{ x:{ ticks:{ color:'#888', font:{size:10} }, grid:{ color:'#f0f0ee' } }, y:{ ticks:{ color:'#888', font:{size:10}, callback:v=>v+'%' }, grid:{ color:'#f0f0ee' }, min:0, max:100 } } } });
+  S.charts.geo=new Chart(ctx,{type:'line',data:{labels:['Sem 1','Sem 4','Sem 8','Sem 13'],datasets:platforms.map((p,i)=>({label:p.name,data:[p.prev,Math.round(p.prev+(p.curr-p.prev)*.3),Math.round(p.prev+(p.curr-p.prev)*.7),p.curr],borderColor:['#e8352a','#111','#888','#ddd'][i],tension:.4,pointRadius:3,borderWidth:2,fill:false}))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#555',font:{size:10},boxWidth:8}}},scales:{x:{ticks:{color:'#888',font:{size:10}},grid:{color:'#f0f0ee'}},y:{ticks:{color:'#888',font:{size:10},callback:v=>v+'%'},grid:{color:'#f0f0ee'},min:0,max:100}}}});
 }
 </script>
 </body>
