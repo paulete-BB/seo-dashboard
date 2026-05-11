@@ -467,18 +467,31 @@ function enterDash(){
 
 function setRange(d,btn){S.days=d;document.querySelectorAll('.rtab').forEach(b=>b.classList.remove('on'));btn.classList.add('on');loadSEO();}
 
+// ─── HELPERS (deben estar antes de cualquier función que los use) ─────────────
+function ago(n){const d=new Date();d.setDate(d.getDate()-n);return d.toISOString().slice(0,10);}
+function fN(n){return n==null?'—':n>=1e6?(n/1e6).toFixed(1)+'M':n>=1000?(n/1000).toFixed(1)+'K':Math.round(n).toLocaleString('es-CL');}
+function fP(n){return n!=null?(n*100).toFixed(1)+'%':'—';}
+function fSec(s){if(!s||s===0)return'—';const m=Math.floor(s/60);const sec=Math.round(s%60);return m>0?`${m}m ${sec}s`:`${sec}s`;}
+function dlt(c,p,low){if(c==null||!p)return'';const d=((c-p)/Math.abs(p))*100,a=Math.abs(d).toFixed(1)+'%',g=low?d<0:d>0;return`<span class="${g?'up':'dn'}">${d>0?'▲':'▼'} ${a} vs per. ant.</span>`;}
+function destroyC(){Object.values(S.charts).forEach(c=>{try{c.destroy();}catch(e){}});S.charts={};}
+
 // ─── GSC API ────────────────────────────────────────────────────────────────
 async function gscQ(body){
   const r=await fetch(`https://www.googleapis.com/webmasters/v3/sites/${encodeURIComponent(S.url)}/searchAnalytics/query`,{method:'POST',headers:{Authorization:`Bearer ${S.token}`,'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(r.status===401){handleExpiredToken();throw new Error('Token expirado — re-autenticando…');}
   if(!r.ok){const e=await r.json();throw new Error(e.error?.message||`GSC ${r.status}`);}
   return r.json();
 }
-const ago=n=>{const d=new Date();d.setDate(d.getDate()-n);return d.toISOString().slice(0,10);};
-const fN=n=>n==null?'—':n>=1e6?(n/1e6).toFixed(1)+'M':n>=1000?(n/1000).toFixed(1)+'K':Math.round(n).toLocaleString('es-CL');
-const fP=n=>n!=null?(n*100).toFixed(1)+'%':'—';
-const fSec=s=>{if(!s||s===0)return'—';const m=Math.floor(s/60);const sec=Math.round(s%60);return m>0?`${m}m ${sec}s`:`${sec}s`;};
-const dlt=(c,p,low)=>{if(c==null||!p)return'';const d=((c-p)/Math.abs(p))*100,a=Math.abs(d).toFixed(1)+'%',g=low?d<0:d>0;return`<span class="${g?'up':'dn'}">${d>0?'▲':'▼'} ${a} vs per. ant.</span>`;};
-function destroyC(){Object.values(S.charts).forEach(c=>{try{c.destroy();}catch(e){}});S.charts={};}
+
+function handleExpiredToken(){
+  sessionStorage.removeItem('bb_t');
+  S.token=null;
+  setConn(false);
+  // Store current client so we return after re-auth
+  if(S.id)sessionStorage.setItem('bb_pend',S.id);
+  // Small delay so the user sees what's happening
+  setTimeout(()=>doOAuth(),800);
+}
 
 // ─── LOAD SEO ────────────────────────────────────────────────────────────────
 async function loadSEO(){
