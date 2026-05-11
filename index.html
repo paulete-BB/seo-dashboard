@@ -564,49 +564,36 @@ async function loadGA4GEO(){
   const c=clients().find(x=>x.id===S.id);
   if(!c||!c.ga4){showNoGA4();return;}
   const propId=c.ga4;
-  // Hide others, show loader
   document.getElementById('geo-no-ga4').style.display='none';
   document.getElementById('geo-ga4-error').style.display='none';
   document.getElementById('geo-ga4-section').style.display='none';
   document.getElementById('geo-kpis').style.display='none';
   document.getElementById('geo-ga4-loading').style.display='block';
 
-  try{
-    // Build OR filter for all AI source domains
-    const allDomains=AI_SOURCES.flatMap(s=>s.domains);
-    // GA4 Data API: sessions, users, conversions by session_source
-    const body={
-      dateRanges:[
-        {startDate:ago(S.days+3),endDate:ago(3),name:'current'},
-        {startDate:ago(S.days*2+3),endDate:ago(S.days+3),name:'previous'}
-      ],
-      dimensions:[{name:'sessionSource'},{name:'dateRange'}],
-      metrics:[
-        {name:'sessions'},
-        {name:'totalUsers'},
-        {name:'conversions'},
-        {name:'averageSessionDuration'}
-      ],
-      dimensionFilter:{
-        orGroup:{
-          expressions: allDomains.map(d=>({
-            filter:{fieldName:'sessionSource',stringFilter:{matchType:'CONTAINS',value:d,caseSensitive:false}}
-          }))
-        }
-      },
-      limit:200
-    };
+  const allDomains=AI_SOURCES.flatMap(s=>s.domains);
+  const domainFilter={orGroup:{expressions:allDomains.map(d=>({filter:{fieldName:'sessionSource',stringFilter:{matchType:'CONTAINS',value:d,caseSensitive:false}}}))}};
+  const makeBody=(startDate,endDate)=>({
+    dateRanges:[{startDate,endDate}],
+    dimensions:[{name:'sessionSource'}],
+    metrics:[{name:'sessions'},{name:'totalUsers'},{name:'conversions'},{name:'averageSessionDuration'}],
+    dimensionFilter:domainFilter,
+    limit:200
+  });
+  const ga4Fetch=async body=>{
     const res=await fetch(`https://analyticsdata.googleapis.com/v1beta/properties/${propId}:runReport`,{
       method:'POST',
       headers:{Authorization:`Bearer ${S.token}`,'Content-Type':'application/json'},
       body:JSON.stringify(body)
     });
-    if(!res.ok){
-      const err=await res.json();
-      throw new Error(err.error?.message||`GA4 ${res.status}`);
-    }
-    const data=await res.json();
-    processGA4Data(data);
+    if(!res.ok){const err=await res.json();throw new Error(err.error?.message||`GA4 ${res.status}`);}
+    return res.json();
+  };
+  try{
+    const[currData,prevData]=await Promise.all([
+      ga4Fetch(makeBody(ago(S.days+3),ago(3))),
+      ga4Fetch(makeBody(ago(S.days*2+3),ago(S.days+3)))
+    ]);
+    processGA4Data(currData,prevData);
   }catch(e){
     document.getElementById('geo-ga4-loading').style.display='none';
     const errEl=document.getElementById('geo-ga4-error');
@@ -615,37 +602,27 @@ async function loadGA4GEO(){
   }
 }
 
-function processGA4Data(data){
+function processGA4Data(currData,prevData){
   document.getElementById('geo-ga4-loading').style.display='none';
-  const rows=data.rows||[];
-  // Aggregate per AI source
-  const agg={};// key: AI_SOURCES key
+  const agg={};
   AI_SOURCES.forEach(s=>{agg[s.key]={label:s.label,color:s.color,curr:{sessions:0,users:0,conv:0,dur:0,durCount:0},prev:{sessions:0,users:0,conv:0}};});
-
-  rows.forEach(row=>{
-    const src=row.dimensionValues[0].value.toLowerCase();
-    const range=row.dimensionValues[1].value;// 'current' or 'previous'
-    const sessions=parseFloat(row.metricValues[0].value)||0;
-    const users=parseFloat(row.metricValues[1].value)||0;
-    const conv=parseFloat(row.metricValues[2].value)||0;
-    const dur=parseFloat(row.metricValues[3].value)||0;
-
-    // Match to AI source
-    const match=AI_SOURCES.find(s=>s.domains.some(d=>src.includes(d)));
-    if(!match)return;
-    const bucket=agg[match.key];
-    if(range==='current'){
-      bucket.curr.sessions+=sessions;
-      bucket.curr.users+=users;
-      bucket.curr.conv+=conv;
-      bucket.curr.dur+=dur*sessions;// weighted
-      bucket.curr.durCount+=sessions;
-    }else{
-      bucket.prev.sessions+=sessions;
-      bucket.prev.users+=users;
-      bucket.prev.conv+=conv;
-    }
-  });
+  const parseRows=(rows,bucket)=>{
+    (rows||[]).forEach(row=>{
+      const src=row.dimensionValues[0].value.toLowerCase();
+      const sessions=parseFloat(row.metricValues[0].value)||0;
+      const users=parseFloat(row.metricValues[1].value)||0;
+      const conv=parseFloat(row.metricValues[2].value)||0;
+      const dur=parseFloat(row.metricValues[3].value)||0;
+      const match=AI_SOURCES.find(s=>s.domains.some(d=>src.includes(d)));
+      if(!match)return;
+      agg[match.key][bucket].sessions+=sessions;
+      agg[match.key][bucket].users+=users;
+      agg[match.key][bucket].conv+=conv;
+      if(bucket==='curr'){agg[match.key].curr.dur+=dur*sessions;agg[match.key].curr.durCount+=sessions;}
+    });
+  };
+  parseRows(currData.rows,'curr');
+  parseRows(prevData.rows,'prev');
 
   // Totals
   const totCurrSess=Object.values(agg).reduce((s,v)=>s+v.curr.sessions,0);
