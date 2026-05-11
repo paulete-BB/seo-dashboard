@@ -180,6 +180,19 @@ body { font-family: 'DM Sans', sans-serif; background: #f5f5f3; color: #111; min
 .hidden{display:none !important;}
 .mt8{margin-top:8px;}
 /* GEO KPI mini cards */
+
+/* AEO panel styles */
+.aeo-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px;}
+@media(max-width:800px){.aeo-kpis{grid-template-columns:1fr 1fr;}}
+.conv-q{font-size:12px;padding:7px 0;border-bottom:1px solid var(--gray-100);display:flex;align-items:flex-start;gap:10px;}
+.conv-q:last-child{border-bottom:none;}
+.conv-q-text{flex:1;color:var(--black);line-height:1.4;}
+.conv-q-meta{display:flex;gap:6px;flex-shrink:0;align-items:center;}
+.conv-badge{font-family:'DM Mono',monospace;font-size:10px;padding:2px 6px;border-radius:3px;}
+.cb-long{background:#faf5ff;color:#7c3aed;}
+.cb-conv{background:#eff6ff;color:var(--blue);}
+.cb-imp{background:#f0fdf4;color:var(--success);}
+.aeo-note{font-size:10px;color:var(--gray-400);font-family:'DM Mono',monospace;padding:8px 0 2px;line-height:1.6;}
 .geo-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px;}
 @media(max-width:800px){.geo-kpis{grid-template-columns:1fr 1fr;}}
 </style>
@@ -198,6 +211,7 @@ body { font-family: 'DM Sans', sans-serif; background: #f5f5f3; color: #111; min
     <div class="s-sec">
       <div class="s-lbl">Reportes</div>
       <div class="nav on" id="nv-seo" onclick="goSec('seo',this)"><span class="ndot"></span>Dashboard SEO</div>
+      <div class="nav" id="nv-aeo" onclick="goSec('aeo',this)"><span class="ndot"></span>AEO — Google AI</div>
       <div class="nav" id="nv-geo" onclick="goSec('geo',this)"><span class="ndot"></span>GEO — IAs</div>
     </div>
     <div class="s-sec" style="flex:1;display:flex;flex-direction:column;min-height:0">
@@ -225,16 +239,6 @@ body { font-family: 'DM Sans', sans-serif; background: #f5f5f3; color: #111; min
       <div class="mact"><button class="bg" onclick="closeModal('mod-add')">Cancelar</button><button class="btn bb" style="width:auto" onclick="saveClient()">Guardar</button></div>
     </div>
   </div>
-
-  <!-- MODAL GEO MANUAL -->
-  <div class="overlay hidden" id="mod-geo" onclick="if(event.target===this)closeModal('mod-geo')">
-    <div class="modal">
-      <div class="mt">Visibilidad en IAs — datos manuales</div>
-      <div class="ms" id="geo-ms">Ingresa el % de visibilidad/menciones para cada plataforma (0–100).</div>
-      <div class="msec">% Visibilidad + datos de seguimiento</div>
-      <div id="geo-ed"></div>
-      <div class="mact"><button class="bg" onclick="closeModal('mod-geo')">Cancelar</button><button class="btn bb" style="width:auto" onclick="saveGEO()">Guardar</button></div>
-    </div>
   </div>
 
   <div class="main">
@@ -284,13 +288,61 @@ body { font-family: 'DM Sans', sans-serif; background: #f5f5f3; color: #111; min
         </div>
       </div>
 
+
+      <!-- AEO -->
+      <div class="screen" id="sc-aeo">
+        <div class="ph">
+          <div><div class="ph-t">AEO — Google AI Mode &amp; AI Overviews</div><div class="ph-s" id="aeo-s">Visibilidad en resultados de IA de Google</div></div>
+          <div class="rtabs" id="aeo-rtabs"><button class="rtab on" onclick="setRange(28,this);loadAEO()">28d</button><button class="rtab" onclick="setRange(56,this);loadAEO()">56d</button><button class="rtab" onclick="setRange(84,this);loadAEO()">84d</button></div>
+        </div>
+
+        <!-- KPIs AI Mode -->
+        <div class="aeo-kpis" id="aeo-kpis">
+          <div class="kpi hi"><div class="kl">Clics desde AI Mode</div><div class="kv" id="aeo-k-cl">—</div><div class="kd" id="aeo-k-cl-d"></div></div>
+          <div class="kpi"><div class="kl">Impresiones AI Mode</div><div class="kv" id="aeo-k-im">—</div><div class="kd" id="aeo-k-im-d"></div></div>
+          <div class="kpi"><div class="kl">CTR en AI Mode</div><div class="kv" id="aeo-k-ct">—</div><div class="kd" id="aeo-k-ct-d"></div></div>
+        </div>
+
+        <div id="aeo-aimode-note" class="infobox info" style="display:none"></div>
+
+        <div class="g2" style="margin-bottom:10px;">
+          <!-- AI Mode keywords table -->
+          <div class="panel">
+            <div class="ph2"><span class="pt">Keywords en AI Mode</span><span class="ptag tp">GSC · AI Mode</span></div>
+            <div class="pb2" style="padding:0 16px 12px">
+              <table class="kwt"><thead><tr><th>Query</th><th>Imp.</th><th>Clics</th><th>CTR</th><th>Pos.</th></tr></thead><tbody id="aeo-kw-body"></tbody></table>
+              <div class="aeo-note" id="aeo-kw-note"></div>
+            </div>
+          </div>
+          <!-- AI Mode timeline chart -->
+          <div class="panel">
+            <div class="ph2"><span class="pt">Tendencia AI Mode</span><span class="ptag tp">GSC</span></div>
+            <div class="pb2"><div class="cw"><canvas id="ch-aeo-tl"></canvas></div></div>
+          </div>
+        </div>
+
+        <!-- Conversational queries -->
+        <div class="panel">
+          <div class="ph2">
+            <span class="pt">Queries conversacionales (proxy AI Overviews)</span>
+            <span class="ptag ta">Heurística GSC</span>
+          </div>
+          <div class="pb2" style="padding:0 16px 14px">
+            <div class="infobox" style="margin-bottom:10px;margin-top:8px">
+              Queries de 5+ palabras o con intención informacional — los que con mayor frecuencia disparan AI Overviews. Google aún no expone este dato directamente en GSC, pero este filtro identifica el segmento más afectado.
+            </div>
+            <div id="aeo-conv-body"></div>
+          </div>
+        </div>
+      </div>
+
       <!-- GEO -->
       <div class="screen" id="sc-geo">
         <div class="ph">
           <div><div class="ph-t">GEO — Generative Engine Optimization</div><div class="ph-s" id="geo-s">Visibilidad y tráfico desde IAs</div></div>
           <div style="display:flex;gap:8px;align-items:center;">
             <button class="brs" id="geo-ga4-btn" onclick="loadGA4GEO()" style="display:none">↺ Actualizar GA4</button>
-            <button class="brs" onclick="openGEO()">✎ Editar datos manuales</button>
+
           </div>
         </div>
 
@@ -325,11 +377,7 @@ body { font-family: 'DM Sans', sans-serif; background: #f5f5f3; color: #111; min
         </div>
         <div id="geo-ga4-error" class="infobox warn" style="display:none"></div>
 
-        <!-- Manual visibility panels -->
-        <div class="g2" style="margin-top:10px">
-          <div class="panel"><div class="ph2"><span class="pt">Visibilidad por plataforma</span><span class="ptag ty">GEO manual</span></div><div class="pb2" id="geo-body"></div></div>
-          <div class="panel"><div class="ph2"><span class="pt">Inicio vs. Hoy</span><span class="ptag ty">GEO</span></div><div class="pb2"><div class="cw"><canvas id="ch-geo"></canvas></div></div></div>
-        </div>
+
       </div>
 
     </div>
@@ -341,7 +389,6 @@ const CID='971004179651-mnrj4pj6k2gjdve67ffsess1octaa38t.apps.googleusercontent.
 const REDIR='https://paulete-bb.github.io/seo-dashboard';
 // Scopes: GSC + GA4
 const SCOPE='https://www.googleapis.com/auth/webmasters.readonly https://www.googleapis.com/auth/analytics.readonly';
-const PLATS=['ChatGPT / GPT-4o','Perplexity AI','Google AI Overview','Claude / Copilot'];
 
 // Known AI referrer domains for GA4 filtering
 const AI_SOURCES = [
@@ -387,11 +434,12 @@ function uploadLogo(i){const f=i.files[0];if(!f)return;const r=new FileReader();
 function goSec(n,el){
   document.querySelectorAll('.nav').forEach(x=>x.classList.remove('on'));
   if(el)el.classList.add('on');
-  const t={seo:'Dashboard SEO',geo:'GEO — IAs'};
+  const t={seo:'Dashboard SEO',aeo:'AEO — Google AI',geo:'GEO — IAs'};
   document.getElementById('t-sec').textContent=t[n]||n;
   if(!S.token){showAuth();return;}
   if(!S.url){alert('Selecciona un cliente del sidebar.');return;}
   showSc('sc-'+n);
+  if(n==='aeo')loadAEO();
   if(n==='geo')renderGEO();
 }
 
@@ -538,8 +586,143 @@ async function loadKW(){
   S.charts.pos=new Chart(document.getElementById('ch-pos').getContext('2d'),{type:'doughnut',data:{labels:['Top 3','Top 10','Top 20','Top 50','50+'],datasets:[{data:b,backgroundColor:['#16a34a','#3b82f6','#e8352a','#f59e0b','#ddd'],borderColor:'#fff',borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,cutout:'70%',plugins:{legend:{position:'bottom',labels:{color:'#555',font:{size:10},padding:8,boxWidth:8}}}}});
 }
 
+
+// ─── AEO ─────────────────────────────────────────────────────────────────────
+async function loadAEO(){
+  if(!S.token||!S.url)return;
+  document.getElementById('aeo-s').textContent=`Google AI Mode · ${S.name} · últimos ${S.days} días`;
+  ['aeo-k-cl','aeo-k-im','aeo-k-ct'].forEach(i=>{document.getElementById(i).textContent='···';document.getElementById(i+'-d').innerHTML='';});
+  document.getElementById('aeo-kw-body').innerHTML='';
+  document.getElementById('aeo-conv-body').innerHTML='<div class="empty">Cargando…</div>';
+  if(S.charts.aeoTl)try{S.charts.aeoTl.destroy();}catch(e){}
+  try{await Promise.all([loadAEOAIMode(),loadAEOConversational()]);}
+  catch(e){console.error('AEO:',e.message);}
+}
+
+async function loadAEOAIMode(){
+  // AI Mode data via searchAppearance dimension — available since June 2025
+  let aiModeData=null,aiModePrev=null;
+  const noteEl=document.getElementById('aeo-aimode-note');
+  try{
+    [aiModeData,aiModePrev]=await Promise.all([
+      gscQ({startDate:ago(S.days+3),endDate:ago(3),dimensions:['searchAppearance'],rowLimit:50}),
+      gscQ({startDate:ago(S.days*2+3),endDate:ago(S.days+3),dimensions:['searchAppearance'],rowLimit:50})
+    ]);
+  }catch(e){
+    noteEl.textContent='⚠ No se pudo cargar data de AI Mode: '+e.message;
+    noteEl.style.display='block';
+    return;
+  }
+
+  // Find AI_MODE row in searchAppearance results
+  const findAI=rows=>(rows||[]).find(r=>r.keys[0]==='AI_MODE')||null;
+  const curr=findAI(aiModeData.rows),prev=findAI(aiModePrev.rows);
+
+  if(!curr){
+    noteEl.innerHTML='ℹ Sin datos de AI Mode para este sitio en el período seleccionado. Es posible que el sitio aún no aparezca citado en Google AI Mode, o que el período sea muy corto. Prueba con 56d o 84d.';
+    noteEl.style.display='block';
+    document.getElementById('aeo-k-cl').textContent='0';
+    document.getElementById('aeo-k-im').textContent='0';
+    document.getElementById('aeo-k-ct').textContent='0%';
+  }else{
+    noteEl.style.display='none';
+    document.getElementById('aeo-k-cl').textContent=fN(curr.clicks);
+    document.getElementById('aeo-k-cl-d').innerHTML=dlt(curr.clicks,prev?.clicks,false);
+    document.getElementById('aeo-k-im').textContent=fN(curr.impressions);
+    document.getElementById('aeo-k-im-d').innerHTML=dlt(curr.impressions,prev?.impressions,false);
+    document.getElementById('aeo-k-ct').textContent=fP(curr.ctr);
+    document.getElementById('aeo-k-ct-d').innerHTML=dlt(curr.ctr,prev?.ctr,false);
+  }
+
+  // Keywords table: queries where AI_MODE appears
+  let kwAI=null;
+  try{
+    kwAI=await gscQ({
+      startDate:ago(S.days+3),endDate:ago(3),
+      dimensions:['query'],
+      dimensionFilterGroups:[{filters:[{dimension:'searchAppearance',operator:'equals',expression:'AI_MODE'}]}],
+      rowLimit:20
+    });
+  }catch(e){}
+
+  const rows=kwAI?.rows||[];
+  const tb=document.getElementById('aeo-kw-body');
+  const note=document.getElementById('aeo-kw-note');
+  if(!rows.length){
+    tb.innerHTML=`<tr><td colspan="5" style="text-align:center;color:var(--gray-400);font-family:'DM Mono',monospace;font-size:11px;padding:16px">Sin queries de AI Mode en este período</td></tr>`;
+    note.textContent='';
+  }else{
+    tb.innerHTML=rows.map(r=>`<tr>
+      <td class="kq" title="${r.keys[0]}">${r.keys[0]}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:11px">${fN(r.impressions)}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:11px">${fN(r.clicks)}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:11px">${fP(r.ctr)}</td>
+      <td><span class="pbadge ${r.position<=3?'pt3':r.position<=10?'pt10':r.position<=20?'pt20':'prs'}">${r.position.toFixed(1)}</span></td>
+    </tr>`).join('');
+    note.textContent=`${rows.length} queries activas en AI Mode`;
+  }
+
+  // Timeline: daily AI Mode trend
+  let tlAI=null;
+  try{
+    tlAI=await gscQ({
+      startDate:ago(S.days+3),endDate:ago(3),
+      dimensions:['date'],
+      dimensionFilterGroups:[{filters:[{dimension:'searchAppearance',operator:'equals',expression:'AI_MODE'}]}],
+      rowLimit:100
+    });
+  }catch(e){}
+  const tlRows=(tlAI?.rows||[]).sort((a,b)=>a.keys[0].localeCompare(b.keys[0]));
+  if(S.charts.aeoTl)try{S.charts.aeoTl.destroy();}catch(e){}
+  S.charts.aeoTl=new Chart(document.getElementById('ch-aeo-tl').getContext('2d'),{
+    type:'line',
+    data:{
+      labels:tlRows.map(r=>r.keys[0].slice(5)),
+      datasets:[
+        {label:'Impresiones AI Mode',data:tlRows.map(r=>r.impressions),borderColor:'#7c3aed',backgroundColor:'rgba(124,58,237,0.06)',tension:.4,fill:true,pointRadius:0,borderWidth:2,yAxisID:'y'},
+        {label:'Clics AI Mode',data:tlRows.map(r=>r.clicks),borderColor:'#e8352a',backgroundColor:'rgba(232,53,42,0.04)',tension:.4,fill:true,pointRadius:0,borderWidth:1.5,borderDash:[4,3],yAxisID:'y1'}
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#555',font:{size:10},boxWidth:8}}},scales:{x:{ticks:{color:'#888',font:{size:10},maxTicksLimit:8},grid:{color:'#f0f0ee'}},y:{display:false},y1:{display:false}}}
+  });
+}
+
+async function loadAEOConversational(){
+  // Conversational queries proxy: 5+ word queries = likely AI Overview triggers
+  const data=await gscQ({
+    startDate:ago(S.days+3),endDate:ago(3),
+    dimensions:['query'],rowLimit:200
+  });
+  const AI_INTENT=/\b(qué|como|cuál|cuáles|cuánto|cuántos|cuándo|dónde|por qué|mejor|mejores|cómo|diferencia|comparar|recomienda|sirve|funciona|what|how|which|when|where|why|best|difference|compare|recommend|vs\b)/i;
+  const conv=(data.rows||[])
+    .filter(r=>{
+      const q=r.keys[0];
+      const words=q.trim().split(/\s+/).length;
+      return words>=5||AI_INTENT.test(q);
+    })
+    .sort((a,b)=>b.impressions-a.impressions)
+    .slice(0,20);
+
+  const el=document.getElementById('aeo-conv-body');
+  if(!conv.length){el.innerHTML='<div class="empty">Sin queries conversacionales detectadas en este período.</div>';return;}
+
+  el.innerHTML=conv.map(r=>{
+    const words=r.keys[0].trim().split(/\s+/).length;
+    const isLong=words>=5;
+    const isIntent=AI_INTENT.test(r.keys[0]);
+    return`<div class="conv-q">
+      <div class="conv-q-text">${r.keys[0]}</div>
+      <div class="conv-q-meta">
+        ${isLong?`<span class="conv-badge cb-long">${words} palabras</span>`:''}
+        ${isIntent?`<span class="conv-badge cb-conv">intención IA</span>`:''}
+        <span class="conv-badge cb-imp">${fN(r.impressions)} imp.</span>
+        <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--gray-400)">${fP(r.ctr)} CTR</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
 // ─── GEO ─────────────────────────────────────────────────────────────────────
-const getGeo=()=>cd(S.id,'geo')||PLATS.map(n=>({name:n,prev:0,curr:0,menciones:0,conversiones:0}));
 
 function renderGEO(){
   document.getElementById('geo-s').textContent=`Visibilidad de ${S.name} en IAs`;
@@ -548,7 +731,6 @@ function renderGEO(){
   const hasGA4=c&&c.ga4;
   document.getElementById('geo-ga4-btn').style.display=hasGA4?'':'none';
   if(hasGA4){loadGA4GEO();}else{showNoGA4();}
-  renderGEOManual();
 }
 
 function showNoGA4(){
@@ -673,43 +855,8 @@ function processGA4Data(currData,prevData){
   document.getElementById('geo-ga4-section').style.display='grid';
 }
 
-function renderGEOManual(){
-  const data=getGeo();
-  document.getElementById('geo-body').innerHTML=data.map(p=>`
-    <div class="ai-b">
-      <div class="ai-n">${p.name}<span>${p.curr}%</span></div>
-      <div class="ai-s">${p.prev>0||p.curr>0?`Inicio: ${p.prev}% → Hoy: ${p.curr}%`:'Sin datos. Haz clic en "Editar datos manuales".'}</div>
-      <div class="ai-t"><div class="ai-f" style="width:${p.curr}%"></div></div>
-    </div>`).join('');
-  if(S.charts.geo)try{S.charts.geo.destroy();}catch(e){}
-  S.charts.geo=new Chart(document.getElementById('ch-geo').getContext('2d'),{type:'bar',data:{labels:data.map(p=>p.name.split('/')[0].trim()),datasets:[{label:'Inicio',data:data.map(p=>p.prev),backgroundColor:'#f0f0ee',borderRadius:4},{label:'Hoy',data:data.map(p=>p.curr),backgroundColor:'#e8352a',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#555',font:{size:10},boxWidth:8}}},scales:{x:{ticks:{color:'#888',font:{size:10}},grid:{color:'#f0f0ee'}},y:{min:0,max:100,ticks:{color:'#888',font:{size:10},callback:v=>v+'%'},grid:{color:'#f0f0ee'}}}}});
-}
 
-function openGEO(){
-  if(!S.id){alert('Selecciona un cliente primero.');return;}
-  document.getElementById('geo-ms').textContent=`Cliente: ${S.name}`;
-  const data=getGeo();
-  document.getElementById('geo-ed').innerHTML=data.map((p,i)=>`
-    <div style="margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--border)">
-      <div style="font-size:11px;font-weight:600;margin-bottom:8px">${p.name}</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
-        <div><label class="fl-l">% Inicio</label><input class="fi" type="number" min="0" max="100" id="gp_${i}" value="${p.prev}"/></div>
-        <div><label class="fl-l">% Hoy</label><input class="fi" type="number" min="0" max="100" id="gc_${i}" value="${p.curr}"/></div>
-        <div><label class="fl-l">Menciones</label><input class="fi" type="number" min="0" id="gm_${i}" value="${p.menciones||0}"/></div>
-      </div>
-    </div>`).join('');
-  document.getElementById('mod-geo').classList.remove('hidden');
-}
 
-function saveGEO(){
-  scd(S.id,'geo',PLATS.map((n,i)=>({
-    name:n,
-    prev:parseInt(document.getElementById(`gp_${i}`)?.value)||0,
-    curr:parseInt(document.getElementById(`gc_${i}`)?.value)||0,
-    menciones:parseInt(document.getElementById(`gm_${i}`)?.value)||0
-  })));
-  closeModal('mod-geo');renderGEOManual();
-}
 </script>
 </body>
 </html>
