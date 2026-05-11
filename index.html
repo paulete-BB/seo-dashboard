@@ -507,7 +507,7 @@ async function runAEO(){
   document.getElementById('aeo-aibox').innerHTML=`<div class="aibox"><div class="aibox-t">✦ Claude AI</div><div class="spin-row"><span class="spinner"></span>Analizando ${S.kws.length} keywords reales de ${S.name}…</div></div>`;
   const kwList=S.kws.slice(0,20).map(r=>`- "${r.keys[0]}" | pos ${r.position.toFixed(1)} | CTR ${fP(r.ctr)} | clics ${fN(r.clicks)}`).join('\n');
   try{
-    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+    const res=await fetch('https://claude-proxy.paulete.workers.dev',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
       model:'claude-sonnet-4-20250514',max_tokens:1000,
       system:`Eres experto en SEO y AEO. Analiza keywords reales de GSC e identifica oportunidades de featured snippets. Responde solo en JSON válido, sin texto extra. El sitio es: ${S.url}`,
       messages:[{role:'user',content:`Analiza estas keywords reales de GSC para "${S.name}" (${S.url}):
