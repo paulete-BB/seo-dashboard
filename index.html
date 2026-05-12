@@ -6,7 +6,9 @@
 <title>SEO · GEO Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js">
+// ─── EXPORT / IMPORT CLIENTS ─────────────────────────────────────────────────
+</script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { font-size: 14px; }
@@ -63,7 +65,7 @@ body { font-family: 'DM Sans', sans-serif; background: #f5f5f3; color: #111; min
 .pdot { width:6px; height:6px; border-radius:50%; background:#bbb; }
 .pill.ok .pdot { background:var(--success); animation:blink 2s infinite; }
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
-.content { padding:24px 28px 60px; }
+.content { padding:12px 28px 60px; }
 .screen { display:none; }
 .screen.on { display:block; }
 .auth-wrap { max-width:440px; margin:60px auto; }
@@ -91,7 +93,7 @@ body { font-family: 'DM Sans', sans-serif; background: #f5f5f3; color: #111; min
 .errmsg { background:var(--red-light); border:1px solid var(--red-mid); border-radius:var(--radius); padding:7px 10px; font-size:11px; color:var(--red); font-family:'DM Mono',monospace; margin-top:10px; display:none; }
 .errmsg.on { display:block; }
 .note { font-size:11px; color:var(--gray-400); font-family:'DM Mono',monospace; line-height:1.7; margin-top:8px; }
-.ph { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:18px; flex-wrap:wrap; gap:10px; }
+.ph { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:10px; flex-wrap:wrap; gap:10px; }
 .ph-t { font-size:17px; font-weight:600; }
 .ph-s { font-size:11px; color:var(--gray-400); font-family:'DM Mono',monospace; margin-top:2px; }
 .rtabs { display:flex; gap:2px; background:var(--gray-100); border-radius:var(--radius); padding:3px; }
@@ -212,11 +214,17 @@ body { font-family: 'DM Sans', sans-serif; background: #f5f5f3; color: #111; min
       <div class="s-lbl">Reportes</div>
       <div class="nav on" id="nv-seo" onclick="goSec('seo',this)"><span class="ndot"></span>Dashboard SEO</div>
       <div class="nav" id="nv-aeo" onclick="goSec('aeo',this)"><span class="ndot"></span>AEO — Google AI</div>
+      <div class="nav" id="nv-camp" onclick="goSec('camp',this)"><span class="ndot"></span>Campañas</div>
       <div class="nav" id="nv-geo" onclick="goSec('geo',this)"><span class="ndot"></span>GEO — IAs</div>
     </div>
     <div class="s-sec" style="flex:1;display:flex;flex-direction:column;min-height:0">
       <div class="s-lbl">Clientes
-        <button onclick="openAdd()" style="background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:18px;line-height:1;padding:0">+</button>
+        <div style="display:flex;align-items:center;gap:4px">
+          <button onclick="openAdd()" title="Agregar cliente" style="background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:18px;line-height:1;padding:0">+</button>
+          <button onclick="exportClients()" title="Exportar clientes" style="background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:13px;line-height:1;padding:0 2px">↑</button>
+          <button onclick="document.getElementById('import-inp').click()" title="Importar clientes" style="background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:13px;line-height:1;padding:0 2px">↓</button>
+          <input type="file" id="import-inp" accept=".json" style="display:none" onchange="importClients(this)"/>
+        </div>
       </div>
       <div class="clist" id="clist"></div>
       <div style="padding:4px 0 6px">
@@ -336,6 +344,59 @@ body { font-family: 'DM Sans', sans-serif; background: #f5f5f3; color: #111; min
         </div>
       </div>
 
+      <!-- CAMPAÑAS -->
+      <div class="screen" id="sc-camp">
+        <div class="ph">
+          <div><div class="ph-t">Campañas</div><div class="ph-s" id="camp-s">Resultados de campañas desde GA4</div></div>
+          <div class="rtabs"><button class="rtab on" onclick="setRange(28,this);loadCamp()">28d</button><button class="rtab" onclick="setRange(56,this);loadCamp()">56d</button><button class="rtab" onclick="setRange(84,this);loadCamp()">84d</button></div>
+        </div>
+
+        <div id="camp-no-ga4" class="infobox warn" style="display:none">
+          ⚠ Este cliente no tiene GA4 configurado. Agrega el Property ID al editar el cliente.
+        </div>
+        <div id="camp-loading" class="infobox info" style="display:none">
+          <div class="spin-row"><span class="spinner"></span>Cargando datos de campañas…</div>
+        </div>
+        <div id="camp-error" class="infobox warn" style="display:none"></div>
+
+        <!-- KPIs -->
+        <div class="kpis" id="camp-kpis" style="display:none">
+          <div class="kpi hi"><div class="kl">Sesiones pagas</div><div class="kv" id="camp-k-sess">—</div><div class="kd" id="camp-k-sess-d"></div></div>
+          <div class="kpi"><div class="kl">Conversiones</div><div class="kv" id="camp-k-conv">—</div><div class="kd" id="camp-k-conv-d"></div></div>
+          <div class="kpi"><div class="kl">Costo / conversión</div><div class="kv" id="camp-k-cpc">—</div><div class="kd" id="camp-k-cpc-d"></div></div>
+          <div class="kpi"><div class="kl">T. sesión promedio</div><div class="kv" id="camp-k-dur">—</div><div class="kd"></div></div>
+        </div>
+
+        <!-- Charts + table -->
+        <div class="g2" id="camp-main" style="display:none">
+          <div class="panel">
+            <div class="ph2"><span class="pt">Resultados por campaña</span><span class="ptag tp">GA4 · Ads</span></div>
+            <div class="pb2" style="padding:0 16px 12px">
+              <table class="ga4t" id="camp-table">
+                <thead><tr>
+                  <th>Campaña</th>
+                  <th>Sesiones</th>
+                  <th>Conversiones</th>
+                  <th>Costo / conv.</th>
+                  <th>T. sesión</th>
+                </tr></thead>
+                <tbody id="camp-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="ph2"><span class="pt">Sesiones vs conversiones</span><span class="ptag tp">GA4</span></div>
+            <div class="pb2"><div class="cw"><canvas id="ch-camp"></canvas></div></div>
+          </div>
+        </div>
+
+        <!-- Timeline -->
+        <div class="panel" id="camp-tl-panel" style="display:none;margin-top:10px">
+          <div class="ph2"><span class="pt">Tendencia diaria — sesiones pagas</span><span class="ptag tp">GA4</span></div>
+          <div class="pb2"><div class="cw"><canvas id="ch-camp-tl"></canvas></div></div>
+        </div>
+      </div>
+
       <!-- GEO -->
       <div class="screen" id="sc-geo">
         <div class="ph">
@@ -434,12 +495,13 @@ function uploadLogo(i){const f=i.files[0];if(!f)return;const r=new FileReader();
 function goSec(n,el){
   document.querySelectorAll('.nav').forEach(x=>x.classList.remove('on'));
   if(el)el.classList.add('on');
-  const t={seo:'Dashboard SEO',aeo:'AEO — Google AI',geo:'GEO — IAs'};
+  const t={seo:'Dashboard SEO',aeo:'AEO — Google AI',camp:'Campañas',geo:'GEO — IAs'};
   document.getElementById('t-sec').textContent=t[n]||n;
   if(!S.token){showAuth();return;}
   if(!S.url){alert('Selecciona un cliente del sidebar.');return;}
   showSc('sc-'+n);
   if(n==='aeo')loadAEO();
+  if(n==='camp')loadCamp();
   if(n==='geo')renderGEO();
 }
 
@@ -722,6 +784,178 @@ async function loadAEOConversational(){
   }).join('');
 }
 
+
+// ─── CAMPAÑAS ─────────────────────────────────────────────────────────────────
+async function loadCamp(){
+  if(!S.token||!S.id)return;
+  const client=clients().find(x=>x.id===S.id);
+  if(!client||!client.ga4){
+    document.getElementById('camp-no-ga4').style.display='block';
+    ['camp-loading','camp-error','camp-kpis','camp-main','camp-tl-panel'].forEach(id=>document.getElementById(id).style.display='none');
+    return;
+  }
+  document.getElementById('camp-s').textContent=`${S.name} · últimos ${S.days} días`;
+  document.getElementById('camp-no-ga4').style.display='none';
+  document.getElementById('camp-error').style.display='none';
+  document.getElementById('camp-kpis').style.display='none';
+  document.getElementById('camp-main').style.display='none';
+  document.getElementById('camp-tl-panel').style.display='none';
+  document.getElementById('camp-loading').style.display='block';
+  if(S.charts.camp)try{S.charts.camp.destroy();}catch(e){}
+  if(S.charts.campTl)try{S.charts.campTl.destroy();}catch(e){}
+
+  const propId=client.ga4;
+  const ga4Post=async body=>{
+    const res=await fetch(`https://analyticsdata.googleapis.com/v1beta/properties/${propId}:runReport`,{
+      method:'POST',
+      headers:{Authorization:`Bearer ${S.token}`,'Content-Type':'application/json'},
+      body:JSON.stringify(body)
+    });
+    if(!res.ok){const e=await res.json();throw new Error(e.error?.message||`GA4 ${res.status}`);}
+    return res.json();
+  };
+
+  // Filter: paid traffic only (cpc / google ads)
+  const paidFilter={
+    orGroup:{expressions:[
+      {filter:{fieldName:'sessionMedium',stringFilter:{matchType:'EXACT',value:'cpc',caseSensitive:false}}},
+      {filter:{fieldName:'sessionMedium',stringFilter:{matchType:'EXACT',value:'paid',caseSensitive:false}}}
+    ]}
+  };
+
+  try{
+    const[campData,campPrev,tlData]=await Promise.all([
+      // Current period by campaign
+      ga4Post({
+        dateRanges:[{startDate:ago(S.days+3),endDate:ago(3)}],
+        dimensions:[{name:'sessionCampaignName'}],
+        metrics:[
+          {name:'sessions'},
+          {name:'conversions'},
+          {name:'advertiserAdCostPerConversion'},
+          {name:'averageSessionDuration'}
+        ],
+        dimensionFilter:paidFilter,
+        orderBys:[{metric:{metricName:'sessions'},desc:true}],
+        limit:20
+      }),
+      // Previous period totals only
+      ga4Post({
+        dateRanges:[{startDate:ago(S.days*2+3),endDate:ago(S.days+3)}],
+        dimensions:[{name:'sessionMedium'}],
+        metrics:[{name:'sessions'},{name:'conversions'},{name:'advertiserAdCostPerConversion'}],
+        dimensionFilter:paidFilter,
+        limit:10
+      }),
+      // Daily timeline
+      ga4Post({
+        dateRanges:[{startDate:ago(S.days+3),endDate:ago(3)}],
+        dimensions:[{name:'date'}],
+        metrics:[{name:'sessions'},{name:'conversions'}],
+        dimensionFilter:paidFilter,
+        orderBys:[{dimension:{dimensionName:'date'}}],
+        limit:100
+      })
+    ]);
+
+    document.getElementById('camp-loading').style.display='none';
+
+    // Aggregate totals from campaign rows
+    const rows=campData.rows||[];
+    let totSess=0,totConv=0,totDur=0,totDurCount=0;
+    rows.forEach(r=>{
+      const sess=parseFloat(r.metricValues[0].value)||0;
+      totSess+=sess;
+      totConv+=parseFloat(r.metricValues[1].value)||0;
+      totDur+=(parseFloat(r.metricValues[3].value)||0)*sess;
+      totDurCount+=sess;
+    });
+    const totCpc=totConv>0?(rows.reduce((s,r)=>{
+      const conv=parseFloat(r.metricValues[1].value)||0;
+      const cpc=parseFloat(r.metricValues[2].value)||0;
+      return s+cpc*conv;
+    },0)/totConv):0;
+    const avgDur=totDurCount>0?totDur/totDurCount:0;
+
+    // Previous totals
+    const prevRows=campPrev.rows||[];
+    const prevSess=prevRows.reduce((s,r)=>s+(parseFloat(r.metricValues[0].value)||0),0);
+    const prevConv=prevRows.reduce((s,r)=>s+(parseFloat(r.metricValues[1].value)||0),0);
+
+    // KPIs
+    document.getElementById('camp-k-sess').textContent=fN(totSess);
+    document.getElementById('camp-k-sess-d').innerHTML=dlt(totSess,prevSess,false);
+    document.getElementById('camp-k-conv').textContent=fN(totConv);
+    document.getElementById('camp-k-conv-d').innerHTML=dlt(totConv,prevConv,false);
+    document.getElementById('camp-k-cpc').textContent=totCpc>0?`$${Math.round(totCpc).toLocaleString('es-CL')}`:'—';
+    document.getElementById('camp-k-dur').textContent=fSec(avgDur);
+    document.getElementById('camp-kpis').style.display='grid';
+
+    // Campaign table
+    const tbody=document.getElementById('camp-tbody');
+    if(!rows.length){
+      tbody.innerHTML=`<tr><td colspan="5" style="text-align:center;color:var(--gray-400);font-family:'DM Mono',monospace;font-size:11px;padding:16px">Sin campañas pagas en este período.<br>Verifica que GA4 esté vinculado con Google Ads.</td></tr>`;
+    }else{
+      tbody.innerHTML=rows.map(r=>{
+        const nm=r.dimensionValues[0].value||'(sin nombre)';
+        const sess=parseFloat(r.metricValues[0].value)||0;
+        const conv=parseFloat(r.metricValues[1].value)||0;
+        const cpc=parseFloat(r.metricValues[2].value)||0;
+        const dur=parseFloat(r.metricValues[3].value)||0;
+        return`<tr>
+          <td style="font-size:12px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${nm}">${nm}</td>
+          <td>${fN(sess)}</td>
+          <td>${fN(conv)}</td>
+          <td style="font-family:'DM Mono',monospace">${cpc>0?`$${Math.round(cpc).toLocaleString('es-CL')}`:'—'}</td>
+          <td style="font-family:'DM Mono',monospace">${fSec(dur)}</td>
+        </tr>`;
+      }).join('');
+    }
+
+    // Bar chart: sessions vs conversions per campaign
+    const top8=rows.slice(0,8);
+    S.charts.camp=new Chart(document.getElementById('ch-camp').getContext('2d'),{
+      type:'bar',
+      data:{
+        labels:top8.map(r=>{const n=r.dimensionValues[0].value||'(sin nombre)';return n.length>18?n.slice(0,16)+'…':n;}),
+        datasets:[
+          {label:'Sesiones',data:top8.map(r=>parseFloat(r.metricValues[0].value)||0),backgroundColor:'#e8352a',borderRadius:4,yAxisID:'y'},
+          {label:'Conversiones',data:top8.map(r=>parseFloat(r.metricValues[1].value)||0),backgroundColor:'#3b82f6',borderRadius:4,yAxisID:'y1'}
+        ]
+      },
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#555',font:{size:10},boxWidth:8}}},scales:{
+        x:{ticks:{color:'#888',font:{size:9}},grid:{color:'#f0f0ee'}},
+        y:{position:'left',ticks:{color:'#888',font:{size:10}},grid:{color:'#f0f0ee'}},
+        y1:{position:'right',ticks:{color:'#3b82f6',font:{size:10}},grid:{display:false}}
+      }}
+    });
+    document.getElementById('camp-main').style.display='grid';
+
+    // Timeline chart
+    const tlRows=(tlData.rows||[]);
+    S.charts.campTl=new Chart(document.getElementById('ch-camp-tl').getContext('2d'),{
+      type:'line',
+      data:{
+        labels:tlRows.map(r=>r.dimensionValues[0].value.slice(4)),// MMDD
+        datasets:[
+          {label:'Sesiones',data:tlRows.map(r=>parseFloat(r.metricValues[0].value)||0),borderColor:'#e8352a',backgroundColor:'rgba(232,53,42,0.06)',tension:.4,fill:true,pointRadius:0,borderWidth:2,yAxisID:'y'},
+          {label:'Conversiones',data:tlRows.map(r=>parseFloat(r.metricValues[1].value)||0),borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,0.04)',tension:.4,fill:false,pointRadius:0,borderWidth:1.5,borderDash:[4,3],yAxisID:'y1'}
+        ]
+      },
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#555',font:{size:10},boxWidth:8}}},scales:{
+        x:{ticks:{color:'#888',font:{size:10},maxTicksLimit:8},grid:{color:'#f0f0ee'}},
+        y:{display:false},y1:{display:false}
+      }}
+    });
+    document.getElementById('camp-tl-panel').style.display='block';
+
+  }catch(e){
+    document.getElementById('camp-loading').style.display='none';
+    const errEl=document.getElementById('camp-error');
+    errEl.textContent=`⚠ Error cargando campañas: ${e.message}`;
+    errEl.style.display='block';
+  }
+}
 // ─── GEO ─────────────────────────────────────────────────────────────────────
 
 function renderGEO(){
@@ -857,6 +1091,45 @@ function processGA4Data(currData,prevData){
 
 
 
+
+// ─── EXPORT / IMPORT CLIENTS ─────────────────────────────────────────────────
+function exportClients(){
+  const list=clients();
+  if(!list.length){alert('No hay clientes para exportar.');return;}
+  const blob=new Blob([JSON.stringify(list,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`bigbuda-clientes-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+}
+
+function importClients(input){
+  const file=input.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const imported=JSON.parse(e.target.result);
+      if(!Array.isArray(imported))throw new Error('Formato inválido');
+      const existing=clients();
+      const existingIds=new Set(existing.map(c=>c.id));
+      const existingUrls=new Set(existing.map(c=>c.url));
+      // Only add clients that don't already exist (by URL)
+      const newOnes=imported.filter(c=>!existingUrls.has(c.url));
+      const merged=[...existing,...newOnes];
+      ls.s('bb_cl',merged);
+      renderCL();
+      const msg=newOnes.length
+        ? `✓ ${newOnes.length} cliente(s) importado(s) correctamente.`
+        : 'Todos los clientes ya estaban en tu lista.';
+      alert(msg);
+    }catch(err){
+      alert('Error al importar: '+err.message);
+    }
+    input.value='';
+  };
+  reader.readAsText(file);
+}
 </script>
 </body>
 </html>
