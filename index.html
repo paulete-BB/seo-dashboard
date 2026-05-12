@@ -8,6 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js">
 // ─── EXPORT / IMPORT CLIENTS ─────────────────────────────────────────────────
+
 </script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -197,6 +198,58 @@ body { font-family: 'DM Sans', sans-serif; background: #f5f5f3; color: #111; min
 .aeo-note{font-size:10px;color:var(--gray-400);font-family:'DM Mono',monospace;padding:8px 0 2px;line-height:1.6;}
 .geo-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px;}
 @media(max-width:800px){.geo-kpis{grid-template-columns:1fr 1fr;}}
+
+@media print {
+  /* Reset layout for print */
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  body { background: white !important; font-size: 11px !important; }
+  .sidebar, .topbar, .brs, .rtabs, #btn-polaroid { display: none !important; }
+  .main { margin-left: 0 !important; height: auto !important; overflow: visible !important; }
+  .shell { display: block !important; height: auto !important; overflow: visible !important; }
+  .content { padding: 0 !important; flex: none !important; }
+
+  /* Show ALL screens for print, stacked */
+  .screen { display: block !important; page-break-inside: avoid; margin-bottom: 24px; }
+
+  /* Hide empty/error states that aren't relevant */
+  .screen:empty { display: none !important; }
+  #sc-auth { display: none !important; }
+
+  /* PDF header injected by JS */
+  #pdf-header { display: block !important; }
+
+  /* Compact grid for print */
+  .kpis { grid-template-columns: repeat(4,1fr) !important; gap: 6px !important; margin-bottom: 10px !important; }
+  .g2, .g3 { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
+  .geo-kpis, .aeo-kpis { grid-template-columns: repeat(3,1fr) !important; }
+
+  /* Keep panels styled */
+  .panel, .kpi { box-shadow: none !important; border: 1px solid #e5e5e3 !important; }
+
+  /* Charts: let them render at fixed height */
+  .cw { height: 160px !important; }
+
+  /* Section title separators */
+  .ph { margin-bottom: 8px !important; border-top: 2px solid #e8352a; padding-top: 8px; }
+  .ph-t { font-size: 14px !important; }
+
+  /* Tables compact */
+  .kwt td, .kwt th, .ga4t td, .ga4t th { padding: 4px 6px !important; font-size: 10px !important; }
+
+  /* Page breaks between major sections */
+  #sc-geo { page-break-before: auto; }
+  #sc-camp { page-break-before: auto; }
+
+  /* Infoboxes */
+  .infobox { font-size: 10px !important; padding: 6px 10px !important; }
+}
+
+/* PDF header - hidden on screen */
+#pdf-header { display: none; padding: 0 0 16px 0; border-bottom: 2px solid #e8352a; margin-bottom: 20px; }
+#pdf-header .pdf-logo { font-size: 18px; font-weight: 700; color: #111; }
+#pdf-header .pdf-meta { font-size: 11px; color: #888; font-family: 'DM Mono', monospace; margin-top: 2px; }
+#pdf-header .pdf-stamp { font-size: 10px; color: #e8352a; font-family: 'DM Mono', monospace; margin-top: 6px; font-style: italic; }
+
 </style>
 </head>
 <body>
@@ -215,7 +268,7 @@ body { font-family: 'DM Sans', sans-serif; background: #f5f5f3; color: #111; min
       <div class="nav on" id="nv-seo" onclick="goSec('seo',this)"><span class="ndot"></span>Dashboard SEO</div>
       <div class="nav" id="nv-aeo" onclick="goSec('aeo',this)"><span class="ndot"></span>AEO — Google AI</div>
       <div class="nav" id="nv-camp" onclick="goSec('camp',this)"><span class="ndot"></span>Campañas</div>
-      <div class="nav" id="nv-geo" onclick="goSec('geo',this)"><span class="ndot"></span>GEO — IAs</div>
+      <div class="nav" id="nv-geo" onclick="goSec('geo',this)"><span class="ndot"></span>AEO · GEO — IAs</div>
     </div>
     <div class="s-sec" style="flex:1;display:flex;flex-direction:column;min-height:0">
       <div class="s-lbl">Clientes
@@ -255,9 +308,11 @@ body { font-family: 'DM Sans', sans-serif; background: #f5f5f3; color: #111; min
       <div class="tr">
         <span class="td" id="t-dt"></span>
         <div class="pill ok" id="t-pill"><span class="pdot"></span><span id="t-st">Conectado</span></div>
+        <button class="brs" onclick="takePolaroid()" id="btn-polaroid" style="display:none">📷 Tomar una Polaroid</button>
       </div>
     </div>
     <div class="content">
+      <div id="pdf-header"><div class="pdf-logo" id="pdf-logo">Bigbuda</div><div class="pdf-meta" id="pdf-meta"></div><div class="pdf-stamp">📷 Polaroid tomada por Bigbuda · bigbuda.com</div></div>
 
       <!-- AUTH -->
       <div class="screen" id="sc-auth">
@@ -278,7 +333,7 @@ body { font-family: 'DM Sans', sans-serif; background: #f5f5f3; color: #111; min
       <div class="screen on" id="sc-seo">
         <div class="ph">
           <div><div class="ph-t" id="seo-t">Dashboard SEO</div><div class="ph-s" id="seo-s">—</div></div>
-          <div class="rtabs"><button class="rtab on" onclick="setRange(28,this)">28d</button><button class="rtab" onclick="setRange(56,this)">56d</button><button class="rtab" onclick="setRange(84,this)">84d</button><button class="rtab" onclick="setRange(90,this)">90d</button></div>
+          <div class="rtabs"><button class="rtab on" onclick="setRange(14,this)">14d</button><button class="rtab" onclick="setRange(28,this)">28d</button><button class="rtab" onclick="setRange(90,this)">90d</button></div>
         </div>
         <div class="kpis">
           <div class="kpi hi"><div class="kl">Clics totales</div><div class="kv" id="k-cl">—</div><div class="kd" id="k-cl-d"></div></div>
@@ -301,7 +356,7 @@ body { font-family: 'DM Sans', sans-serif; background: #f5f5f3; color: #111; min
       <div class="screen" id="sc-aeo">
         <div class="ph">
           <div><div class="ph-t">AEO — Google AI Mode &amp; AI Overviews</div><div class="ph-s" id="aeo-s">Visibilidad en resultados de IA de Google</div></div>
-          <div class="rtabs" id="aeo-rtabs"><button class="rtab on" onclick="setRange(28,this);loadAEO()">28d</button><button class="rtab" onclick="setRange(56,this);loadAEO()">56d</button><button class="rtab" onclick="setRange(84,this);loadAEO()">84d</button></div>
+          <div class="rtabs" id="aeo-rtabs"><button class="rtab on" onclick="setRange(14,this);loadAEO()">14d</button><button class="rtab" onclick="setRange(28,this);loadAEO()">28d</button><button class="rtab" onclick="setRange(90,this);loadAEO()">90d</button></div>
         </div>
 
         <!-- KPIs AI Mode -->
@@ -348,7 +403,7 @@ body { font-family: 'DM Sans', sans-serif; background: #f5f5f3; color: #111; min
       <div class="screen" id="sc-camp">
         <div class="ph">
           <div><div class="ph-t">Campañas</div><div class="ph-s" id="camp-s">Resultados de campañas desde GA4</div></div>
-          <div class="rtabs"><button class="rtab on" onclick="setRange(28,this);loadCamp()">28d</button><button class="rtab" onclick="setRange(56,this);loadCamp()">56d</button><button class="rtab" onclick="setRange(84,this);loadCamp()">84d</button></div>
+          <div class="rtabs"><button class="rtab on" onclick="setRange(14,this);loadCamp()">14d</button><button class="rtab" onclick="setRange(28,this);loadCamp()">28d</button><button class="rtab" onclick="setRange(90,this);loadCamp()">90d</button></div>
         </div>
 
         <div id="camp-no-ga4" class="infobox warn" style="display:none">
@@ -459,7 +514,7 @@ const AI_SOURCES = [
   { key:'claude',     label:'Claude / Copilot',     domains:['claude.ai','copilot.microsoft.com','bing.com'], color:'#c96442' },
 ];
 
-const S={token:null,url:null,name:'',id:null,days:28,charts:{},kws:[]};
+const S={token:null,url:null,name:'',id:null,days:14,charts:{},kws:[]};
 const ls={g:k=>{try{return JSON.parse(localStorage.getItem(k));}catch(e){return null;}},s:(k,v)=>localStorage.setItem(k,JSON.stringify(v))};
 const clients=()=>ls.g('bb_cl')||[];
 const cd=(id,k)=>ls.g(`bb_${k}_${id}`);
@@ -495,7 +550,7 @@ function uploadLogo(i){const f=i.files[0];if(!f)return;const r=new FileReader();
 function goSec(n,el){
   document.querySelectorAll('.nav').forEach(x=>x.classList.remove('on'));
   if(el)el.classList.add('on');
-  const t={seo:'Dashboard SEO',aeo:'AEO — Google AI',camp:'Campañas',geo:'GEO — IAs'};
+  const t={seo:'Dashboard SEO',aeo:'AEO — Google AI',camp:'Campañas',geo:'AEO · GEO — IAs'};
   document.getElementById('t-sec').textContent=t[n]||n;
   if(!S.token){showAuth();return;}
   if(!S.url){alert('Selecciona un cliente del sidebar.');return;}
@@ -573,9 +628,11 @@ function enterDash(){
   document.getElementById('nv-seo').classList.add('on');
   document.getElementById('t-sec').textContent='Dashboard SEO';
   showSc('sc-seo');loadSEO();
+  document.getElementById('btn-polaroid').style.display='';
 }
 
-function setRange(d,btn){S.days=d;document.querySelectorAll('.rtab').forEach(b=>b.classList.remove('on'));btn.classList.add('on');loadSEO();}
+function setRange(d,btn){S.days=d;document.querySelectorAll('#sc-seo .rtab').forEach(b=>b.classList.remove('on'));btn.classList.add('on');loadSEO();}
+function setRangeGeo(d,btn){S.days=d;document.querySelectorAll('#sc-geo .rtab').forEach(b=>b.classList.remove('on'));btn.classList.add('on');renderGEO();}
 
 // ─── HELPERS (deben estar antes de cualquier función que los use) ─────────────
 function ago(n){const d=new Date();d.setDate(d.getDate()-n);return d.toISOString().slice(0,10);}
@@ -959,7 +1016,7 @@ async function loadCamp(){
 // ─── GEO ─────────────────────────────────────────────────────────────────────
 
 function renderGEO(){
-  document.getElementById('geo-s').textContent=`Visibilidad de ${S.name} en IAs`;
+  document.getElementById('geo-s').textContent=`${S.name} · últimos ${S.days} días`;
   // Show/hide GA4 button based on whether property has GA4 configured
   const c=clients().find(x=>x.id===S.id);
   const hasGA4=c&&c.ga4;
@@ -1130,6 +1187,42 @@ function importClients(input){
   };
   reader.readAsText(file);
 }
+
+// ─── POLAROID PDF ────────────────────────────────────────────────────────────
+function takePolaroid(){
+  // Update PDF header
+  const date = new Date().toLocaleDateString('es-CL',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  document.getElementById('pdf-logo').textContent = S.name || 'Bigbuda';
+  document.getElementById('pdf-meta').textContent =
+    `Reporte SEO · AEO · GEO · Campañas — ${date} — ${S.days} días`;
+
+  // Temporarily show AEO screen for print even if not active
+  const screens = document.querySelectorAll('.screen');
+  const prevStates = [];
+  screens.forEach(s => {
+    prevStates.push(s.style.display);
+    // sc-auth should stay hidden
+    if(s.id === 'sc-auth') return;
+    s.classList.add('on');
+  });
+
+  // Trigger print
+  window.print();
+
+  // Restore state after print dialog closes
+  setTimeout(()=>{
+    screens.forEach((s,i) => {
+      s.classList.remove('on');
+      s.style.display = prevStates[i];
+    });
+    // Restore the active screen
+    const activeId = 'sc-' + (['seo','aeo','camp','geo'].find(n =>
+      document.getElementById('nv-'+n)?.classList.contains('on')
+    ) || 'seo');
+    document.getElementById(activeId)?.classList.add('on');
+  }, 1000);
+}
+
 </script>
 </body>
 </html>
