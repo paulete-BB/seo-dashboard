@@ -23,7 +23,7 @@ body { font-family: 'DM Sans', sans-serif; background: #f5f5f3; color: #111; min
   --shadow:0 1px 3px rgba(0,0,0,0.08),0 1px 2px rgba(0,0,0,0.04);
   --shadow-md:0 4px 16px rgba(0,0,0,0.10);
 }
-.shell { display:flex; height:100vh; overflow:hidden; }
+.shell { display:flex; min-height:100vh; }
 .sidebar { width:220px; flex-shrink:0; background:var(--white); border-right:1px solid var(--border); display:flex; flex-direction:column; position:fixed; top:0; bottom:0; left:0; z-index:100; overflow-y:auto; }
 .sidebar-logo { padding:18px 16px 14px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:10px; cursor:pointer; position:relative; flex-shrink:0; }
 .logo-ph { width:30px; height:30px; border-radius:6px; background:var(--black); display:flex; align-items:center; justify-content:center; color:white; font-size:12px; font-weight:600; flex-shrink:0; }
@@ -54,7 +54,7 @@ body { font-family: 'DM Sans', sans-serif; background: #f5f5f3; color: #111; min
 .ci.active .ci-av { background:var(--red); }
 .s-foot { margin-top:auto; padding:12px 16px; border-top:1px solid var(--border); font-size:10px; color:var(--gray-400); font-family:'DM Mono',monospace; flex-shrink:0; line-height:1.6; }
 .s-foot span { color:var(--red); }
-.main { margin-left:220px; flex:1; min-width:0; display:flex; flex-direction:column; position:relative; overflow-y:auto; height:100vh; }
+.main { margin-left:220px; flex:1; min-width:0; }
 .topbar { background:var(--white); border-bottom:1px solid var(--border); padding:0 28px; height:48px; min-height:48px; flex-shrink:0; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:50; }
 .tl { display:flex; align-items:center; gap:8px; }
 .tc { font-size:12px; color:var(--gray-400); }
@@ -353,35 +353,10 @@ body { font-family: 'DM Sans', sans-serif; background: #f5f5f3; color: #111; min
 
 
       <!-- AEO -->
-      <div class="screen" id="sc-aeo">
+            <div class="screen" id="sc-aeo">
         <div class="ph">
-          <div><div class="ph-t">AEO — Google AI Mode &amp; AI Overviews</div><div class="ph-s" id="aeo-s">Visibilidad en resultados de IA de Google</div></div>
+          <div><div class="ph-t">AEO — Google AI</div><div class="ph-s" id="aeo-s">Queries conversacionales — proxy AI Overviews</div></div>
           <div class="rtabs" id="aeo-rtabs"><button class="rtab on" onclick="setRange(14,this);loadAEO()">14d</button><button class="rtab" onclick="setRange(28,this);loadAEO()">28d</button><button class="rtab" onclick="setRange(90,this);loadAEO()">90d</button></div>
-        </div>
-
-        <!-- KPIs AI Mode -->
-        <div class="aeo-kpis" id="aeo-kpis">
-          <div class="kpi hi"><div class="kl">Clics desde AI Mode</div><div class="kv" id="aeo-k-cl">—</div><div class="kd" id="aeo-k-cl-d"></div></div>
-          <div class="kpi"><div class="kl">Impresiones AI Mode</div><div class="kv" id="aeo-k-im">—</div><div class="kd" id="aeo-k-im-d"></div></div>
-          <div class="kpi"><div class="kl">CTR en AI Mode</div><div class="kv" id="aeo-k-ct">—</div><div class="kd" id="aeo-k-ct-d"></div></div>
-        </div>
-
-        <div id="aeo-aimode-note" class="infobox info" style="display:none"></div>
-
-        <div class="g2" style="margin-bottom:10px;">
-          <!-- AI Mode keywords table -->
-          <div class="panel">
-            <div class="ph2"><span class="pt">Keywords en AI Mode</span><span class="ptag tp">GSC · AI Mode</span></div>
-            <div class="pb2" style="padding:0 16px 12px">
-              <table class="kwt"><thead><tr><th>Query</th><th>Imp.</th><th>Clics</th><th>CTR</th><th>Pos.</th></tr></thead><tbody id="aeo-kw-body"></tbody></table>
-              <div class="aeo-note" id="aeo-kw-note"></div>
-            </div>
-          </div>
-          <!-- AI Mode timeline chart -->
-          <div class="panel">
-            <div class="ph2"><span class="pt">Tendencia AI Mode</span><span class="ptag tp">GSC</span></div>
-            <div class="pb2"><div class="cw"><canvas id="ch-aeo-tl"></canvas></div></div>
-          </div>
         </div>
 
         <!-- Conversational queries -->
@@ -398,6 +373,7 @@ body { font-family: 'DM Sans', sans-serif; background: #f5f5f3; color: #111; min
           </div>
         </div>
       </div>
+
 
       <!-- CAMPAÑAS -->
       <div class="screen" id="sc-camp">
@@ -709,12 +685,9 @@ async function loadKW(){
 // ─── AEO ─────────────────────────────────────────────────────────────────────
 async function loadAEO(){
   if(!S.token||!S.url)return;
-  document.getElementById('aeo-s').textContent=`Google AI Mode · ${S.name} · últimos ${S.days} días`;
-  ['aeo-k-cl','aeo-k-im','aeo-k-ct'].forEach(i=>{document.getElementById(i).textContent='···';document.getElementById(i+'-d').innerHTML='';});
-  document.getElementById('aeo-kw-body').innerHTML='';
+  document.getElementById('aeo-s').textContent=`${S.name} · últimos ${S.days} días`;
   document.getElementById('aeo-conv-body').innerHTML='<div class="empty">Cargando…</div>';
-  if(S.charts.aeoTl)try{S.charts.aeoTl.destroy();}catch(e){}
-  try{await Promise.all([loadAEOAIMode(),loadAEOConversational()]);}
+  try{await loadAEOConversational();}
   catch(e){console.error('AEO:',e.message);}
 }
 
