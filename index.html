@@ -37,7 +37,7 @@ body { font-family: 'DM Sans', sans-serif; background: #f5f5f3; color: #111; min
 .nav.on { background:var(--red-light); color:var(--red); font-weight:500; }
 .ndot { width:6px; height:6px; border-radius:50%; background:#ddd; flex-shrink:0; }
 .nav.on .ndot { background:var(--red); }
-.clist { max-height:200px; overflow-y:auto; }
+.clist { max-height:calc(100vh - 320px); overflow-y:auto; }
 .ci { display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:var(--radius); cursor:pointer; transition:background .12s; position:relative; }
 .ci:hover { background:var(--gray-100); }
 .ci:hover .ci-del { opacity:1; }
@@ -815,7 +815,7 @@ body { font-family: 'DM Sans', sans-serif; background: #f5f5f3; color: #111; min
 .nav.on { background:var(--red-light); color:var(--red); font-weight:500; }
 .ndot { width:6px; height:6px; border-radius:50%; background:#ddd; flex-shrink:0; }
 .nav.on .ndot { background:var(--red); }
-.clist { max-height:200px; overflow-y:auto; }
+.clist { max-height:calc(100vh - 320px); overflow-y:auto; }
 .ci { display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:var(--radius); cursor:pointer; transition:background .12s; position:relative; }
 .ci:hover { background:var(--gray-100); }
 .ci:hover .ci-del { opacity:1; }
