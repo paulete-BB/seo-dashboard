@@ -3,174 +3,1464 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>SEO · GEO Dashboard</title>
+<title>SEO · AEO · GEO Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js">
-// ─── EXPORT / IMPORT CLIENTS ─────────────────────────────────────────────────
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 14px; }
+body { font-family: 'DM Sans', sans-serif; background: #f5f5f3; color: #111; min-height: 100vh; -webkit-font-smoothing: antialiased; }
+:root {
+  --red:#e8352a; --red-light:#fff0ef; --red-mid:#ffdcda;
+  --black:#111; --gray-900:#222; --gray-600:#555; --gray-400:#888;
+  --gray-100:#f0f0ee; --white:#fff; --border:#e5e5e3;
+  --success:#16a34a; --blue:#3b82f6;
+  --radius:6px; --radius-lg:10px;
+  --shadow:0 1px 3px rgba(0,0,0,0.08),0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md:0 4px 16px rgba(0,0,0,0.10);
+}
+.shell { display:flex; min-height:100vh; }
+.sidebar { width:220px; flex-shrink:0; background:var(--white); border-right:1px solid var(--border); display:flex; flex-direction:column; position:fixed; top:0; bottom:0; left:0; z-index:100; overflow-y:auto; }
+.sidebar-logo { padding:18px 16px 14px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:10px; cursor:pointer; position:relative; flex-shrink:0; }
+.logo-ph { width:30px; height:30px; border-radius:6px; background:var(--black); display:flex; align-items:center; justify-content:center; color:white; font-size:12px; font-weight:600; flex-shrink:0; }
+.logo-img { width:30px; height:30px; border-radius:6px; object-fit:contain; flex-shrink:0; }
+.logo-text { font-size:13px; font-weight:600; color:var(--black); }
+.logo-sub { font-size:10px; color:var(--gray-400); font-family:'DM Mono',monospace; }
+.logo-hint { position:absolute; inset:0; background:rgba(255,255,255,.9); display:flex; align-items:center; justify-content:center; font-size:10px; color:var(--gray-600); opacity:0; transition:.15s; pointer-events:none; font-family:'DM Mono',monospace; border-radius:inherit; }
+.sidebar-logo:hover .logo-hint { opacity:1; }
+#logo-inp { display:none; }
+.s-sec { padding:12px 10px 4px; flex-shrink:0; }
+.s-lbl { font-size:10px; font-family:'DM Mono',monospace; color:var(--gray-400); text-transform:uppercase; letter-spacing:.1em; padding:0 8px; margin-bottom:4px; display:flex; align-items:center; justify-content:space-between; }
+.nav { display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:var(--radius); cursor:pointer; font-size:13px; color:var(--gray-600); transition:all .12s; user-select:none; }
+.nav:hover { background:var(--gray-100); color:var(--black); }
+.nav.on { background:var(--red-light); color:var(--red); font-weight:500; }
+.ndot { width:6px; height:6px; border-radius:50%; background:#ddd; flex-shrink:0; }
+.nav.on .ndot { background:var(--red); }
+.clist { max-height:200px; overflow-y:auto; }
+.ci { display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:var(--radius); cursor:pointer; transition:background .12s; position:relative; }
+.ci:hover { background:var(--gray-100); }
+.ci:hover .ci-del { opacity:1; }
+.ci-av { width:22px; height:22px; border-radius:4px; background:var(--black); display:flex; align-items:center; justify-content:center; color:white; font-size:10px; font-weight:600; flex-shrink:0; }
+.ci-info { flex:1; min-width:0; }
+.ci-nm { font-size:12px; font-weight:500; color:var(--black); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.ci-url { font-size:10px; color:var(--gray-400); font-family:'DM Mono',monospace; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.ci-del { opacity:0; background:none; border:none; cursor:pointer; color:var(--gray-400); font-size:14px; padding:0 2px; flex-shrink:0; transition:color .12s,opacity .12s; }
+.ci-del:hover { color:var(--red); }
+.ci.active .ci-nm { color:var(--red); }
+.ci.active .ci-av { background:var(--red); }
+.s-foot { margin-top:auto; padding:12px 16px; border-top:1px solid var(--border); font-size:10px; color:var(--gray-400); font-family:'DM Mono',monospace; flex-shrink:0; line-height:1.6; }
+.s-foot span { color:var(--red); }
+.main { margin-left:220px; flex:1; min-width:0; }
+.topbar { background:var(--white); border-bottom:1px solid var(--border); padding:0 28px; height:48px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:50; }
+.tl { display:flex; align-items:center; gap:8px; }
+.tc { font-size:12px; color:var(--gray-400); }
+.tt { font-size:13px; font-weight:500; }
+.tr { display:flex; align-items:center; gap:10px; }
+.td { font-size:11px; font-family:'DM Mono',monospace; color:var(--gray-400); }
+.pill { display:flex; align-items:center; gap:5px; background:var(--gray-100); border-radius:20px; padding:3px 10px; font-size:11px; color:var(--gray-600); font-family:'DM Mono',monospace; }
+.pill.ok { background:#f0fdf4; color:var(--success); }
+.pdot { width:6px; height:6px; border-radius:50%; background:#bbb; }
+.pill.ok .pdot { background:var(--success); animation:blink 2s infinite; }
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.content { padding:12px 28px 60px; }
+.screen { display:none; }
+.screen.on { display:block; }
+.auth-wrap { max-width:440px; margin:60px auto; }
+.ae { font-size:11px; font-family:'DM Mono',monospace; color:var(--gray-400); text-transform:uppercase; letter-spacing:.12em; margin-bottom:8px; }
+.ah { font-size:22px; font-weight:600; margin-bottom:4px; }
+.ap { font-size:13px; color:var(--gray-600); margin-bottom:24px; line-height:1.6; }
+.card { background:var(--white); border:1px solid var(--border); border-radius:var(--radius-lg); padding:20px; box-shadow:var(--shadow); }
+.card+.card { margin-top:10px; }
+.fl { margin-bottom:12px; }
+.fl-l { display:block; font-size:10px; font-family:'DM Mono',monospace; color:var(--gray-600); text-transform:uppercase; letter-spacing:.08em; margin-bottom:4px; }
+.fi { width:100%; height:34px; padding:0 10px; border:1px solid var(--border); border-radius:var(--radius); font-family:'DM Mono',monospace; font-size:12px; color:var(--black); background:var(--white); outline:none; transition:border-color .15s; }
+.fi:focus { border-color:var(--black); }
+.fi::placeholder { color:var(--gray-400); }
+.fsel { width:100%; height:34px; padding:0 10px; border:1px solid var(--border); border-radius:var(--radius); font-family:'DM Mono',monospace; font-size:12px; color:var(--black); background:var(--white); outline:none; cursor:pointer; }
+.btn { height:34px; padding:0 14px; border-radius:var(--radius); font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; cursor:pointer; border:none; transition:all .15s; display:inline-flex; align-items:center; gap:6px; }
+.bb { background:var(--black); color:white; width:100%; justify-content:center; }
+.bb:hover { background:var(--gray-900); }
+.bb:disabled { opacity:.4; cursor:not-allowed; }
+.bo { background:var(--white); color:var(--black); width:100%; justify-content:center; border:1px solid var(--border); }
+.bo:hover { border-color:var(--black); }
+.bg { background:none; border:1px solid var(--border); color:var(--gray-600); height:34px; padding:0 14px; border-radius:var(--radius); font-family:'DM Sans',sans-serif; font-size:13px; cursor:pointer; }
+.bg:hover { border-color:var(--gray-600); }
+.brs { height:26px; padding:0 10px; font-size:11px; font-family:'DM Mono',monospace; background:var(--red-light); border:1px solid var(--red-mid); color:var(--red); border-radius:var(--radius); cursor:pointer; white-space:nowrap; }
+.brs:hover { background:var(--red-mid); }
+.errmsg { background:var(--red-light); border:1px solid var(--red-mid); border-radius:var(--radius); padding:7px 10px; font-size:11px; color:var(--red); font-family:'DM Mono',monospace; margin-top:10px; display:none; }
+.errmsg.on { display:block; }
+.note { font-size:11px; color:var(--gray-400); font-family:'DM Mono',monospace; line-height:1.7; margin-top:8px; }
+.ph { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:10px; flex-wrap:wrap; gap:10px; }
+.ph-t { font-size:17px; font-weight:600; }
+.ph-s { font-size:11px; color:var(--gray-400); font-family:'DM Mono',monospace; margin-top:2px; }
+.rtabs { display:flex; gap:2px; background:var(--gray-100); border-radius:var(--radius); padding:3px; }
+.rtab { padding:3px 10px; border-radius:4px; font-size:11px; font-family:'DM Mono',monospace; color:var(--gray-600); cursor:pointer; border:none; background:transparent; transition:all .12s; }
+.rtab.on { background:var(--white); color:var(--black); font-weight:500; box-shadow:var(--shadow); }
+.kpis { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:14px; }
+@media(max-width:800px){.kpis{grid-template-columns:repeat(2,1fr);}}
+.kpi { background:var(--white); border:1px solid var(--border); border-radius:var(--radius-lg); padding:14px 16px; box-shadow:var(--shadow); position:relative; overflow:hidden; }
+.kpi::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:var(--border); }
+.kpi.hi::before { background:var(--red); }
+.kl { font-size:10px; font-family:'DM Mono',monospace; color:var(--gray-400); text-transform:uppercase; letter-spacing:.1em; margin-bottom:6px; }
+.kv { font-size:24px; font-weight:600; letter-spacing:-.02em; line-height:1; }
+.kd { font-size:11px; font-family:'DM Mono',monospace; margin-top:4px; }
+.up{color:var(--success);} .dn{color:var(--red);}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.g3{display:grid;grid-template-columns:1.7fr 1fr;gap:10px;margin-bottom:10px;}
+@media(max-width:800px){.g2,.g3{grid-template-columns:1fr;}}
+.panel { background:var(--white); border:1px solid var(--border); border-radius:var(--radius-lg); box-shadow:var(--shadow); overflow:hidden; }
+.ph2 { display:flex; align-items:center; justify-content:space-between; padding:12px 16px; border-bottom:1px solid var(--border); }
+.pt { font-size:13px; font-weight:500; }
+.pb2 { padding:14px 16px; }
+.ptag { font-size:10px; font-family:'DM Mono',monospace; padding:2px 7px; border-radius:20px; letter-spacing:.08em; text-transform:uppercase; border:1px solid; }
+.tg{background:#fff0ef;color:var(--red);border-color:var(--red-mid);}
+.ta{background:#eff6ff;color:var(--blue);border-color:#bfdbfe;}
+.tl2{background:#f0fdf4;color:var(--success);border-color:#bbf7d0;}
+.ty{background:#fefce8;color:#ca8a04;border-color:#fde68a;}
+.cw{position:relative;width:100%;height:200px;}
+.kwt{width:100%;border-collapse:collapse;font-size:12px;}
+.kwt th{font-family:'DM Mono',monospace;font-size:10px;color:var(--gray-400);text-transform:uppercase;letter-spacing:.1em;padding:0 8px 7px;border-bottom:1px solid var(--border);text-align:left;font-weight:500;}
+.kwt td{padding:7px 8px;border-bottom:1px solid var(--gray-100);vertical-align:middle;}
+.kwt tr:last-child td{border-bottom:none;}
+.kwt tr:hover td{background:var(--gray-100);}
+.kq{max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;}
+.pbadge{display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:18px;border-radius:3px;padding:0 4px;font-family:'DM Mono',monospace;font-size:10px;font-weight:500;}
+.pt3{background:#f0fdf4;color:var(--success);}
+.pt10{background:#eff6ff;color:var(--blue);}
+.pt20{background:#fff0ef;color:var(--red);}
+.prs{background:var(--gray-100);color:var(--gray-600);}
+.chip{font-family:'DM Mono',monospace;font-size:10px;padding:2px 5px;border-radius:3px;display:inline-block;white-space:nowrap;}
+.chu{background:#f0fdf4;color:var(--success);}
+.chd{background:#fff0ef;color:var(--red);}
+.chn{background:#eff6ff;color:var(--blue);}
+.chs{background:var(--gray-100);color:var(--gray-400);}
+.snip{display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-bottom:1px solid var(--gray-100);font-size:12px;}
+.snip:last-child{border-bottom:none;}
+.st{font-family:'DM Mono',monospace;font-size:10px;padding:2px 6px;border-radius:3px;flex-shrink:0;background:#fff0ef;color:var(--red);border:1px solid var(--red-mid);margin-top:1px;}
+.st.opp{background:#eff6ff;color:var(--blue);border-color:#bfdbfe;}
+.sbody{flex:1;}
+.sq{color:var(--black);line-height:1.4;}
+.sm{font-size:10px;color:var(--gray-400);font-family:'DM Mono',monospace;margin-top:2px;}
+.sai{background:#eff6ff;border:1px solid #bfdbfe;border-radius:3px;font-size:10px;font-family:'DM Mono',monospace;padding:1px 6px;color:var(--blue);display:inline-block;margin-top:2px;}
+.ctr-r{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:11px;}
+.ctr-l{width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:'DM Mono',monospace;color:var(--gray-600);}
+.ctr-t{flex:1;height:5px;background:var(--gray-100);border-radius:3px;overflow:hidden;}
+.ctr-f{height:100%;border-radius:3px;background:var(--red);}
+.ctr-p{width:32px;text-align:right;font-family:'DM Mono',monospace;color:var(--gray-600);}
+.ai-b{margin-bottom:14px;}
+.ai-n{font-size:12px;font-weight:500;margin-bottom:3px;display:flex;justify-content:space-between;}
+.ai-n span{font-family:'DM Mono',monospace;font-size:11px;color:var(--gray-600);}
+.ai-s{font-size:10px;color:var(--gray-400);font-family:'DM Mono',monospace;margin-bottom:4px;}
+.ai-t{height:6px;background:var(--gray-100);border-radius:3px;overflow:hidden;}
+.ai-f{height:100%;border-radius:3px;background:var(--red);}
+.aibox{background:#eff6ff;border:1px solid #bfdbfe;border-radius:var(--radius-lg);padding:14px 16px;margin-top:10px;}
+.aibox.err{background:#fff0ef;border-color:var(--red-mid);}
+.aibox-t{font-size:11px;font-weight:600;color:var(--blue);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+.aibox.err .aibox-t{color:var(--red);}
+.aibox-c{font-size:12px;color:#1e3a5f;line-height:1.7;}
+.aibox.err .aibox-c{color:var(--red);}
+.spin-row{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--blue);font-family:'DM Mono',monospace;}
+.spinner{width:14px;height:14px;border:2px solid #bfdbfe;border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty{font-size:12px;color:var(--gray-400);font-family:'DM Mono',monospace;padding:20px 0;text-align:center;}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px;}
+.modal{background:var(--white);border-radius:var(--radius-lg);border:1px solid var(--border);box-shadow:var(--shadow-md);padding:22px;width:420px;max-width:100%;max-height:90vh;overflow-y:auto;}
+.mt{font-size:14px;font-weight:600;margin-bottom:4px;}
+.ms{font-size:11px;color:var(--gray-400);font-family:'DM Mono',monospace;margin-bottom:16px;line-height:1.6;}
+.msec{font-size:10px;font-family:'DM Mono',monospace;color:var(--gray-400);text-transform:uppercase;letter-spacing:.1em;margin:14px 0 8px;padding-bottom:4px;border-bottom:1px solid var(--border);}
+.mact{display:flex;gap:8px;margin-top:16px;justify-content:flex-end;}
+.hidden{display:none !important;}
+.mt8{margin-top:8px;}
+
+/* Extra grid */
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:10px;}
+@media(max-width:900px){.g4{grid-template-columns:repeat(2,1fr);}}
+/* GEO platform colors */
+.ga4-src{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:500;}
+.ga4-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+/* GA4 table */
+.ga4t{width:100%;border-collapse:collapse;font-size:12px;}
+.ga4t th{font-family:'DM Mono',monospace;font-size:10px;color:var(--gray-400);text-transform:uppercase;letter-spacing:.1em;padding:0 8px 7px;border-bottom:1px solid var(--border);text-align:left;font-weight:500;}
+.ga4t td{padding:7px 8px;border-bottom:1px solid var(--gray-100);vertical-align:middle;font-family:'DM Mono',monospace;font-size:11px;}
+.ga4t tr:last-child td{border-bottom:none;}
+.ga4t tr:hover td{background:var(--gray-100);}
+/* Purple tag */
+.tp{background:#faf5ff;color:#7c3aed;border-color:#ddd6fe;}
+/* Infobox */
+.infobox{background:var(--gray-100);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;font-size:11px;color:var(--gray-600);font-family:'DM Mono',monospace;line-height:1.7;margin-bottom:10px;}
+.infobox.warn{background:#fefce8;border-color:#fde68a;color:#92400e;}
+.infobox.info{background:#eff6ff;border-color:#bfdbfe;color:#1e40af;}
+/* GEO kpis */
+.geo-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px;}
+@media(max-width:800px){.geo-kpis{grid-template-columns:1fr 1fr;}}
+/* AEO conversational queries */
+.conv-q{font-size:12px;padding:7px 0;border-bottom:1px solid var(--gray-100);display:flex;align-items:flex-start;gap:10px;}
+.conv-q:last-child{border-bottom:none;}
+.conv-q-text{flex:1;color:var(--black);line-height:1.4;}
+.conv-q-meta{display:flex;gap:6px;flex-shrink:0;align-items:center;}
+.conv-badge{font-family:'DM Mono',monospace;font-size:10px;padding:2px 6px;border-radius:3px;}
+.cb-long{background:#faf5ff;color:#7c3aed;}
+.cb-conv{background:#eff6ff;color:var(--blue);}
+.cb-imp{background:#f0fdf4;color:var(--success);}
+/* Recomendaciones */
+.rec-area{margin-bottom:16px;}
+.rec-area-title{font-size:11px;font-family:'DM Mono',monospace;color:var(--gray-400);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+.rec-area-title::after{content:'';flex:1;height:1px;background:var(--border);}
+.rec-item{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin-bottom:8px;font-size:12px;line-height:1.7;color:var(--gray-900);box-shadow:var(--shadow);}
+.rec-item .rec-tag{display:inline-block;font-family:'DM Mono',monospace;font-size:10px;padding:1px 6px;border-radius:3px;margin-right:6px;background:var(--red-light);color:var(--red);border:1px solid var(--red-mid);}
+.rec-item .rec-tag.blue{background:#eff6ff;color:var(--blue);border-color:#bfdbfe;}
+.rec-item .rec-tag.green{background:#f0fdf4;color:var(--success);border-color:#bbf7d0;}
+.rec-summary{background:#eff6ff;border:1px solid #bfdbfe;border-radius:var(--radius-lg);padding:14px 16px;font-size:12px;color:#1e3a5f;line-height:1.7;margin-bottom:16px;}
+.rec-summary-t{font-size:11px;font-weight:600;color:var(--blue);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;}
+/* Print */
+@media print {
+  *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;}
+  body{background:white !important;font-size:11px !important;}
+  .sidebar,.brs,.rtabs,#btn-polaroid{display:none !important;}
+  .main{margin-left:0 !important;}
+  .shell{display:block !important;}
+  .content{padding:0 !important;}
+  .screen{display:block !important;margin-bottom:24px;}
+  #sc-auth{display:none !important;}
+  #pdf-header{display:block !important;}
+  .kpis{grid-template-columns:repeat(4,1fr) !important;gap:6px !important;}
+  .g2,.g3{grid-template-columns:1fr 1fr !important;gap:8px !important;}
+  .geo-kpis{grid-template-columns:repeat(3,1fr) !important;}
+  .panel,.kpi{box-shadow:none !important;border:1px solid #e5e5e3 !important;}
+  .cw{height:160px !important;}
+  .ph{margin-bottom:8px !important;border-top:2px solid #e8352a;padding-top:8px;}
+  .topbar{display:none !important;}
+}
+#pdf-header{display:none;padding:0 0 16px 0;border-bottom:2px solid #e8352a;margin-bottom:20px;}
+#pdf-header .pdf-logo{font-size:18px;font-weight:700;color:#111;}
+#pdf-header .pdf-meta{font-size:11px;color:#888;font-family:'DM Mono',monospace;margin-top:2px;}
+#pdf-header .pdf-stamp{font-size:10px;color:#e8352a;font-family:'DM Mono',monospace;margin-top:6px;font-style:italic;}
+
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <aside class="sidebar">
+    <div class="sidebar-logo" onclick="document.getElementById('logo-inp').click()">
+      <div class="logo-ph" id="logo-ph">B</div>
+      <img class="logo-img hidden" id="logo-img" src="" alt="Logo"/>
+      <div><div class="logo-text" id="ag-nm">Bigbuda</div><div class="logo-sub">SEO · AEO · GEO</div></div>
+      <div class="logo-hint">Subir logo</div>
+    </div>
+    <input type="file" id="logo-inp" accept="image/*" onchange="uploadLogo(this)"/>
+    <div class="s-sec">
+      <div class="s-lbl">Reportes</div>
+      <div class="nav" id="nv-rec" onclick="goSec('rec',this)"><span class="ndot"></span>✦ Recomendaciones</div>
+      <div class="nav on" id="nv-seo" onclick="goSec('seo',this)"><span class="ndot"></span>Dashboard SEO</div>
+      <div class="nav" id="nv-aeo" onclick="goSec('aeo',this)"><span class="ndot"></span>AEO — Google AI</div>
+      <div class="nav" id="nv-camp" onclick="goSec('camp',this)"><span class="ndot"></span>Campañas</div>
+      <div class="nav" id="nv-geo" onclick="goSec('geo',this)"><span class="ndot"></span>AEO · GEO — IAs</div>
+    </div>
+    <div class="s-sec" style="flex:1;display:flex;flex-direction:column;min-height:0">
+      <div class="s-lbl">Clientes
+        <div style="display:flex;align-items:center;gap:4px">
+          <button onclick="openAdd()" title="Agregar" style="background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:18px;line-height:1;padding:0">+</button>
+          <button onclick="exportClients()" title="Exportar" style="background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:13px;padding:0 2px">↑</button>
+          <button onclick="document.getElementById('import-inp').click()" title="Importar" style="background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:13px;padding:0 2px">↓</button>
+          <input type="file" id="import-inp" accept=".json" style="display:none" onchange="importClients(this)"/>
+        </div>
+      </div>
+      <div class="clist" id="clist"></div>
+      <div style="padding:4px 0 6px">
+        <div class="nav hidden" id="nv-in" onclick="doOAuth()" style="padding:6px 8px"><span class="ndot"></span>Iniciar sesión</div>
+        <div class="nav" id="nv-out" onclick="doLogout()" style="padding:6px 8px"><span class="ndot"></span>Desconectar</div>
+      </div>
+    </div>
+    <div class="s-foot">Google Search Console + <span>GA4</span> + <span>Claude AI</span></div>
+  </aside>
+
+  <!-- MODAL AGREGAR CLIENTE -->
+  <div class="overlay hidden" id="mod-add" onclick="if(event.target===this)closeModal('mod-add')">
+    <div class="modal">
+      <div class="mt">Agregar cliente</div>
+      <div class="ms">Selecciona la propiedad directamente desde tu GSC — sin escribir URLs a mano.</div>
+      <div class="fl"><label class="fl-l">Nombre</label><input class="fi" type="text" id="m-nm" placeholder="Ej: Filtrocentro"/></div>
+      <div class="fl"><label class="fl-l">Propiedad GSC</label><select class="fsel" id="m-site"><option>Cargando propiedades…</option></select></div>
+      <div class="fl"><label class="fl-l">GA4 Property ID <span style="color:var(--gray-400)">(opcional)</span></label><input class="fi" type="text" id="m-ga4" placeholder="Ej: 123456789"/></div>
+      <div class="errmsg" id="m-err"></div>
+      <div class="mact"><button class="bg" onclick="closeModal('mod-add')">Cancelar</button><button class="btn bb" style="width:auto" onclick="saveClient()">Guardar</button></div>
+    </div>
+  </div>
+
+  <!-- MODAL GEO -->
+  <div class="overlay hidden" id="mod-geo" onclick="if(event.target===this)closeModal('mod-geo')">
+    <div class="modal">
+      <div class="mt">Visibilidad en IAs</div>
+      <div class="ms" id="geo-ms">Ingresa el % de menciones para cada plataforma (0–100).</div>
+      <div class="msec">% de visibilidad</div>
+      <div id="geo-ed"></div>
+      <div class="mact"><button class="bg" onclick="closeModal('mod-geo')">Cancelar</button><button class="btn bb" style="width:auto" onclick="saveGEO()">Guardar</button></div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="tl"><span class="tc" id="t-ag">Bigbuda</span><span class="tc">›</span><span class="tt" id="t-sec">Dashboard SEO</span></div>
+      <div class="tr">
+        <span class="td" id="t-dt"></span>
+        <div class="pill ok" id="t-pill"><span class="pdot"></span><span id="t-st">Conectado</span></div>
+        <button class="brs" onclick="takePolaroid()" id="btn-polaroid" style="display:none">📷 Tomar una Polaroid</button>
+      </div>
+    </div>
+    <div class="content">
+      <div id="pdf-header"><div class="pdf-logo" id="pdf-logo">Bigbuda</div><div class="pdf-meta" id="pdf-meta"></div><div class="pdf-stamp">📷 Polaroid · Bigbuda · bigbuda.com</div></div>
+
+      <!-- AUTH -->
+      <div class="screen" id="sc-auth">
+        <div class="auth-wrap">
+          <div class="ae">Google Search Console</div>
+          <h1 class="ah">Conectar cuenta</h1>
+          <p class="ap">Autentica con Google para acceder a todas tus propiedades GSC y análisis con Claude AI.</p>
+          <div class="card">
+            <button class="btn bo" onclick="doOAuth()">
+              <svg width="14" height="14" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20H24v8h11.3C33.6 33.1 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.1 8 3l5.7-5.7C34.5 6.5 29.5 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20c11 0 19.7-8 19.7-20 0-1.3-.1-2.7-.4-4z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 16 19 13 24 13c3.1 0 5.9 1.1 8 3l5.7-5.7C34.5 6.5 29.5 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-1.9 13.5-5l-6.2-5.2C29.4 35.6 26.8 36 24 36c-5.1 0-9.5-2.9-11.2-7l-6.5 5C9.8 40 16.4 44 24 44z"/><path fill="#1976D2" d="M43.6 20H24v8h11.3c-.9 2.4-2.5 4.4-4.6 5.8l6.2 5.2C40.9 35.4 44 30.1 44 24c0-1.3-.1-2.7-.4-4z"/></svg>
+              Iniciar con Google OAuth
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- SEO -->
+      <div class="screen on" id="sc-seo">
+        <div class="ph">
+          <div><div class="ph-t" id="seo-t">Dashboard SEO</div><div class="ph-s" id="seo-s">—</div></div>
+          <div class="rtabs"><button class="rtab on" onclick="setRange(14,this)">14d</button><button class="rtab" onclick="setRange(28,this)">28d</button><button class="rtab" onclick="setRange(90,this)">90d</button></div>
+        </div>
+        <div class="kpis">
+          <div class="kpi hi"><div class="kl">Clics totales</div><div class="kv" id="k-cl">—</div><div class="kd" id="k-cl-d"></div></div>
+          <div class="kpi"><div class="kl">Impresiones</div><div class="kv" id="k-im">—</div><div class="kd" id="k-im-d"></div></div>
+          <div class="kpi"><div class="kl">CTR promedio</div><div class="kv" id="k-ct">—</div><div class="kd" id="k-ct-d"></div></div>
+          <div class="kpi"><div class="kl">Posición media</div><div class="kv" id="k-po">—</div><div class="kd" id="k-po-d"></div></div>
+        </div>
+        <div class="g2" style="margin-bottom:10px;">
+          <div class="panel"><div class="ph2"><span class="pt">Clics e impresiones</span><span class="ptag tg">GSC live</span></div><div class="pb2"><div class="cw"><canvas id="ch-tl"></canvas></div></div></div>
+          <div class="panel"><div class="ph2"><span class="pt">Distribución de posiciones</span><span class="ptag tl2">GSC</span></div><div class="pb2"><div class="cw" style="height:180px"><canvas id="ch-pos"></canvas></div></div></div>
+        </div>
+        <div class="g2">
+          <div class="panel"><div class="ph2"><span class="pt">Top keywords</span><span class="ptag tl2">Live</span></div><div class="pb2" style="padding:0 16px 12px"><table class="kwt"><thead><tr><th>Keyword</th><th>Pos.</th><th>Clics</th><th>CTR</th><th>Δ</th></tr></thead><tbody id="kw-body"></tbody></table></div></div>
+          <div class="panel"><div class="ph2"><span class="pt">CTR por query</span><span class="ptag tg">GSC</span></div><div class="pb2"><div id="ctr-body"></div></div></div>
+        </div>
+      </div>
 
 
-// ─── RECOMENDACIONES ──────────────────────────────────────────────────────────
+      <!-- RECOMENDACIONES -->
+      <div class="screen" id="sc-rec">
+        <div class="ph">
+          <div><div class="ph-t">✦ Recomendaciones</div><div class="ph-s" id="rec-s">Análisis con Claude AI</div></div>
+          <button class="brs" id="rec-btn" onclick="loadRec(true)">✦ Analizar con Claude AI</button>
+        </div>
+        <div id="rec-loading" class="infobox info" style="display:none"><div class="spin-row"><span class="spinner"></span><span id="rec-loading-txt">Analizando…</span></div></div>
+        <div id="rec-error" class="infobox warn" style="display:none"></div>
+        <div id="rec-empty" class="infobox">Selecciona un cliente y haz clic en "Analizar con Claude AI".</div>
+        <div id="rec-content" style="display:none">
+          <div class="rec-summary" id="rec-summary-box" style="display:none"><div class="rec-summary-t">✦ Resumen ejecutivo</div><div id="rec-summary-txt"></div></div>
+          <div class="rec-area"><div class="rec-area-title">SEO</div><div id="rec-seo-items"></div></div>
+          <div class="rec-area"><div class="rec-area-title">AEO · Posicionamiento en IAs</div><div id="rec-aeo-items"></div></div>
+          <div class="rec-area"><div class="rec-area-title">Campañas</div><div id="rec-camp-items"></div></div>
+        </div>
+      </div>
+
+      <!-- AEO -->
+      <div class="screen" id="sc-aeo">
+        <div class="ph">
+          <div><div class="ph-t">AEO — Google AI</div><div class="ph-s" id="aeo-s">Queries conversacionales</div></div>
+          <div class="rtabs"><button class="rtab on" onclick="setRange(14,this);loadAEO()">14d</button><button class="rtab" onclick="setRange(28,this);loadAEO()">28d</button><button class="rtab" onclick="setRange(90,this);loadAEO()">90d</button></div>
+        </div>
+        <div class="panel">
+          <div class="ph2"><span class="pt">Queries conversacionales (proxy AI Overviews)</span><span class="ptag ta">Heurística GSC</span></div>
+          <div class="pb2" style="padding:0 16px 14px">
+            <div class="infobox" style="margin-bottom:10px;margin-top:8px">Queries de 5+ palabras o con intención informacional — los que con mayor frecuencia disparan AI Overviews.</div>
+            <div id="aeo-conv-body"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CAMPAÑAS -->
+      <div class="screen" id="sc-camp">
+        <div class="ph">
+          <div><div class="ph-t">Campañas</div><div class="ph-s" id="camp-s">Resultados desde GA4</div></div>
+          <div class="rtabs"><button class="rtab on" onclick="setRange(14,this);loadCamp()">14d</button><button class="rtab" onclick="setRange(28,this);loadCamp()">28d</button><button class="rtab" onclick="setRange(90,this);loadCamp()">90d</button></div>
+        </div>
+        <div id="camp-no-ga4" class="infobox warn" style="display:none">⚠ Este cliente no tiene GA4 configurado.</div>
+        <div id="camp-loading" class="infobox info" style="display:none"><div class="spin-row"><span class="spinner"></span>Cargando campañas…</div></div>
+        <div id="camp-error" class="infobox warn" style="display:none"></div>
+        <div class="kpis" id="camp-kpis" style="display:none">
+          <div class="kpi hi"><div class="kl">Sesiones pagas</div><div class="kv" id="camp-k-sess">—</div><div class="kd" id="camp-k-sess-d"></div></div>
+          <div class="kpi"><div class="kl">Conversiones</div><div class="kv" id="camp-k-conv">—</div><div class="kd" id="camp-k-conv-d"></div></div>
+          <div class="kpi"><div class="kl">Costo / conversión</div><div class="kv" id="camp-k-cpc">—</div><div class="kd"></div></div>
+          <div class="kpi"><div class="kl">T. sesión promedio</div><div class="kv" id="camp-k-dur">—</div><div class="kd"></div></div>
+        </div>
+        <div class="g2" id="camp-main" style="display:none;margin-top:10px">
+          <div class="panel"><div class="ph2"><span class="pt">Resultados por campaña</span><span class="ptag tp">GA4 · Ads</span></div><div class="pb2" style="padding:0 16px 12px"><table class="ga4t"><thead><tr><th>Campaña</th><th>Sesiones</th><th>Conversiones</th><th>Costo/conv.</th><th>T. sesión</th></tr></thead><tbody id="camp-tbody"></tbody></table></div></div>
+          <div class="panel"><div class="ph2"><span class="pt">Sesiones vs conversiones</span><span class="ptag tp">GA4</span></div><div class="pb2"><div class="cw"><canvas id="ch-camp"></canvas></div></div></div>
+        </div>
+        <div class="panel" id="camp-tl-panel" style="display:none;margin-top:10px">
+          <div class="ph2"><span class="pt">Tendencia diaria</span><span class="ptag tp">GA4</span></div>
+          <div class="pb2"><div class="cw"><canvas id="ch-camp-tl"></canvas></div></div>
+        </div>
+      </div>
+
+      <!-- AEO·GEO -->
+      <div class="screen" id="sc-geo">
+        <div class="ph">
+          <div><div class="ph-t">AEO · GEO</div><div class="ph-s" id="geo-s">Visibilidad y tráfico desde IAs</div></div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <button class="brs" id="geo-ga4-btn" onclick="loadGA4GEO()" style="display:none">↺ Actualizar</button>
+            <div class="rtabs"><button class="rtab on" onclick="setRangeGeo(14,this)">14d</button><button class="rtab" onclick="setRangeGeo(28,this)">28d</button><button class="rtab" onclick="setRangeGeo(90,this)">90d</button></div>
+          </div>
+        </div>
+        <div class="geo-kpis" id="geo-kpis" style="display:none">
+          <div class="kpi"><div class="kl">Sesiones desde IAs</div><div class="kv" id="geo-k-sess">—</div><div class="kd" id="geo-k-sess-d"></div></div>
+          <div class="kpi hi"><div class="kl">Usuarios desde IAs</div><div class="kv" id="geo-k-usr">—</div><div class="kd" id="geo-k-usr-d"></div></div>
+          <div class="kpi"><div class="kl">Conversiones IA</div><div class="kv" id="geo-k-conv">—</div><div class="kd" id="geo-k-conv-d"></div></div>
+        </div>
+        <div class="g2" id="geo-ga4-section" style="display:none">
+          <div class="panel"><div class="ph2"><span class="pt">Tráfico referido por IA</span><span class="ptag tp">GA4 live</span></div><div class="pb2" style="padding:0 16px 12px"><table class="ga4t"><thead><tr><th>Fuente IA</th><th>Sesiones</th><th>Usuarios</th><th>Conversiones</th><th>T. sesión</th></tr></thead><tbody id="geo-ga4-body"></tbody></table></div></div>
+          <div class="panel"><div class="ph2"><span class="pt">Sesiones por fuente IA</span><span class="ptag tp">GA4</span></div><div class="pb2"><div class="cw"><canvas id="ch-geo-traffic"></canvas></div></div></div>
+        </div>
+        <div id="geo-no-ga4" class="infobox warn" style="display:none">⚠ Sin GA4 configurado — agrega el Property ID al editar este cliente.</div>
+        <div id="geo-ga4-loading" style="display:none" class="infobox info"><div class="spin-row"><span class="spinner"></span>Cargando datos GA4…</div></div>
+        <div id="geo-ga4-error" class="infobox warn" style="display:none"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const CID='971004179651-mnrj4pj6k2gjdve67ffsess1octaa38t.apps.googleusercontent.com';
+const REDIR='https://paulete-bb.github.io/seo-dashboard';
+const SCOPE='https://www.googleapis.com/auth/webmasters.readonly https://www.googleapis.com/auth/analytics.readonly';
+const AI_SOURCES=[
+  {key:'chatgpt',label:'ChatGPT / GPT-4o',domains:['chatgpt.com','chat.openai.com'],color:'#10a37f'},
+  {key:'perplexity',label:'Perplexity AI',domains:['perplexity.ai'],color:'#1fb8cd'},
+  {key:'google_ai',label:'Google AI Overview',domains:['google.com','bard.google.com','gemini.google.com'],color:'#4285f4'},
+  {key:'claude',label:'Claude / Copilot',domains:['claude.ai','copilot.microsoft.com','bing.com'],color:'#c96442'},
+];
+const S={token:null,url:null,name:'',id:null,days:14,charts:{},kws:[]};
+const ls={g:k=>{try{return JSON.parse(localStorage.getItem(k));}catch(e){return null;}},s:(k,v)=>localStorage.setItem(k,JSON.stringify(v))};
+const clients=()=>ls.g('bb_cl')||[];
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+function ago(n){const d=new Date();d.setDate(d.getDate()-n);return d.toISOString().slice(0,10);}
+function fN(n){return n==null?'—':n>=1e6?(n/1e6).toFixed(1)+'M':n>=1000?(n/1000).toFixed(1)+'K':Math.round(n).toLocaleString('es-CL');}
+function fP(n){return n!=null?(n*100).toFixed(1)+'%':'—';}
+function fSec(s){if(!s||s===0)return'—';const m=Math.floor(s/60);const sec=Math.round(s%60);return m>0?`${m}m ${sec}s`:`${sec}s`;}
+function dlt(c,p,low){if(c==null||!p)return'';const d=((c-p)/Math.abs(p))*100,a=Math.abs(d).toFixed(1)+'%',g=low?d<0:d>0;return`<span class="${g?'up':'dn'}">${d>0?'▲':'▼'} ${a} vs per. ant.</span>`;}
+function destroyC(){Object.values(S.charts).forEach(c=>{try{c.destroy();}catch(e){}});S.charts={};}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+document.getElementById('t-dt').textContent=new Date().toLocaleDateString('es-CL',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+renderCL();
+if(location.hash.includes('access_token')){
+  const h=new URLSearchParams(location.hash.slice(1));
+  const t=h.get('access_token');
+  history.replaceState(null,'',location.pathname);
+  if(t){S.token=t;sessionStorage.setItem('bb_t',t);afterToken();}
+}else{
+  const t=sessionStorage.getItem('bb_t');
+  if(t){S.token=t;afterToken();}
+  else showAuth();
+}
+
+async function afterToken(){
+  setConn(true);
+  const pending=sessionStorage.getItem('bb_pend');
+  if(pending){sessionStorage.removeItem('bb_pend');const c=clients().find(x=>x.id===pending);if(c){pickClient(c.id);return;}}
+  const last=sessionStorage.getItem('bb_last');
+  if(last){const c=clients().find(x=>x.id===last);if(c){pickClient(c.id);return;}}
+  const list=clients();
+  if(list.length===1){pickClient(list[0].id);return;}
+  showSc('sc-seo');
+}
+
+function uploadLogo(i){const f=i.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{document.getElementById('logo-img').src=e.target.result;document.getElementById('logo-img').classList.remove('hidden');document.getElementById('logo-ph').classList.add('hidden');};r.readAsDataURL(f);}
+
+function goSec(n,el){
+  document.querySelectorAll('.nav').forEach(x=>x.classList.remove('on'));
+  if(el)el.classList.add('on');
+  const t={seo:'Dashboard SEO',aeo:'AEO — Google AI',camp:'Campañas',geo:'AEO · GEO — IAs',rec:'✦ Recomendaciones'};
+  document.getElementById('t-sec').textContent=t[n]||n;
+  if(!S.token){showAuth();return;}
+  if(!S.url){alert('Selecciona un cliente del sidebar.');return;}
+  showSc('sc-'+n);
+  if(n==='aeo')loadAEO();
+  if(n==='camp')loadCamp();
+  if(n==='geo')renderGEO();
+  if(n==='rec')loadRec();
+}
+
+function showSc(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
+  document.getElementById(id)?.classList.add('on');
+  window.scrollTo(0,0);
+}
+function showAuth(){setConn(false);showSc('sc-auth');}
+
+function renderCL(){
+  const list=clients(),el=document.getElementById('clist');
+  if(!list.length){el.innerHTML=`<div style="padding:8px 16px;font-size:11px;color:var(--gray-400);font-family:'DM Mono',monospace">Sin clientes.<br>Usa + para agregar.</div>`;return;}
+  el.innerHTML=list.map(c=>`<div class="ci ${S.id===c.id?'active':''}" onclick="pickClient('${c.id}')"><div class="ci-av">${c.name[0].toUpperCase()}</div><div class="ci-info"><div class="ci-nm">${c.name}</div><div class="ci-url">${c.url.replace(/https?:\/\//,'').replace(/\/$/,'')}</div></div><button class="ci-del" onclick="delC(event,'${c.id}')">×</button></div>`).join('');
+}
+
+async function openAdd(){
+  if(!S.token){doOAuth();return;}
+  document.getElementById('m-err').classList.remove('on');
+  document.getElementById('m-nm').value='';
+  document.getElementById('m-ga4').value='';
+  const sel=document.getElementById('m-site');
+  sel.innerHTML='<option>Cargando propiedades…</option>';
+  document.getElementById('mod-add').classList.remove('hidden');
+  try{
+    const res=await fetch('https://www.googleapis.com/webmasters/v3/sites',{headers:{Authorization:`Bearer ${S.token}`}});
+    const data=await res.json();
+    const sites=(data.siteEntry||[]).sort((a,b)=>a.siteUrl.localeCompare(b.siteUrl));
+    sel.innerHTML=sites.length?sites.map(s=>`<option value="${s.siteUrl}">${s.siteUrl}</option>`).join(''):'<option value="">Sin propiedades</option>';
+  }catch(e){sel.innerHTML='<option value="">Error al cargar</option>';}
+}
+function closeModal(id){document.getElementById(id).classList.add('hidden');}
+function saveClient(){
+  const nm=document.getElementById('m-nm').value.trim();
+  const url=document.getElementById('m-site').value;
+  const ga4=document.getElementById('m-ga4').value.trim();
+  if(!nm||!url){const e=document.getElementById('m-err');e.textContent='⚠ Completa nombre y propiedad.';e.classList.add('on');return;}
+  const list=clients();list.push({id:Date.now().toString(),name:nm,url,ga4:ga4||null});
+  ls.s('bb_cl',list);closeModal('mod-add');renderCL();
+}
+function delC(e,id){e.stopPropagation();if(!confirm('¿Eliminar cliente?'))return;ls.s('bb_cl',clients().filter(c=>c.id!==id));if(S.id===id){S.id=null;S.url=null;S.name='';}renderCL();}
+function pickClient(id){
+  const c=clients().find(x=>x.id===id);if(!c)return;
+  if(!S.token){sessionStorage.setItem('bb_pend',id);doOAuth();return;}
+  S.id=c.id;S.url=c.url;S.name=c.name;
+  sessionStorage.setItem('bb_last',id);
+  renderCL();enterDash();
+}
+function doOAuth(){const st=Math.random().toString(36).slice(2);sessionStorage.setItem('bb_os',st);const p=new URLSearchParams({client_id:CID,redirect_uri:REDIR,response_type:'token',scope:SCOPE,state:st});location.href='https://accounts.google.com/o/oauth2/v2/auth?'+p;}
+function doLogout(){S.token=null;S.url=null;S.name='';S.id=null;sessionStorage.removeItem('bb_t');sessionStorage.removeItem('bb_last');destroyC();setConn(false);renderCL();showAuth();}
+function setConn(ok){
+  const p=document.getElementById('t-pill');p.className='pill'+(ok?' ok':'');
+  document.getElementById('t-st').textContent=ok?'Conectado':'Sin conectar';
+  document.getElementById('nv-in').classList.toggle('hidden',ok);
+  document.getElementById('nv-out').classList.toggle('hidden',!ok);
+}
+function enterDash(){
+  document.getElementById('t-ag').textContent=S.name||'Cliente';
+  document.getElementById('ag-nm').textContent=S.name||'Bigbuda';
+  document.getElementById('logo-ph').textContent=(S.name||'B')[0].toUpperCase();
+  document.querySelectorAll('.nav').forEach(n=>n.classList.remove('on'));
+  document.getElementById('nv-seo').classList.add('on');
+  document.getElementById('t-sec').textContent='Dashboard SEO';
+  document.getElementById('btn-polaroid').style.display='';
+  showSc('sc-seo');loadSEO();
+}
+function setRange(d,btn){S.days=d;document.querySelectorAll('#sc-seo .rtab, #sc-aeo .rtab, #sc-camp .rtab').forEach(b=>b.classList.remove('on'));btn.classList.add('on');loadSEO();}
+function setRangeGeo(d,btn){S.days=d;document.querySelectorAll('#sc-geo .rtab').forEach(b=>b.classList.remove('on'));btn.classList.add('on');renderGEO();}
+
+// ─── GSC API ─────────────────────────────────────────────────────────────────
+async function gscQ(body){
+  const r=await fetch(`https://www.googleapis.com/webmasters/v3/sites/${encodeURIComponent(S.url)}/searchAnalytics/query`,{method:'POST',headers:{Authorization:`Bearer ${S.token}`,'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(r.status===401){handleExpiredToken();throw new Error('Token expirado — re-autenticando…');}
+  if(!r.ok){const e=await r.json();throw new Error(e.error?.message||`GSC ${r.status}`);}
+  return r.json();
+}
+function handleExpiredToken(){sessionStorage.removeItem('bb_t');S.token=null;setConn(false);if(S.id)sessionStorage.setItem('bb_pend',S.id);setTimeout(()=>doOAuth(),800);}
+
+// ─── SEO ─────────────────────────────────────────────────────────────────────
+async function loadSEO(){
+  if(!S.token||!S.url)return;
+  ['k-cl','k-im','k-ct','k-po'].forEach(i=>{document.getElementById(i).textContent='···';document.getElementById(i+'-d').innerHTML='';});
+  document.getElementById('seo-t').textContent=S.name;
+  document.getElementById('seo-s').textContent=`${S.url.replace(/https?:\/\//,'').replace(/\/$/,'')} · últimos ${S.days} días`;
+  destroyC();S.kws=[];
+  try{await Promise.all([loadSum(),loadTL(),loadKW()]);}catch(e){console.error('SEO:',e.message);}
+}
+async function loadSum(){
+  const[c,p]=await Promise.all([gscQ({startDate:ago(S.days+3),endDate:ago(3),rowLimit:1}),gscQ({startDate:ago(S.days*2+3),endDate:ago(S.days+3),rowLimit:1})]);
+  const r=c.rows?.[0]||{},q=p.rows?.[0]||{};
+  document.getElementById('k-cl').textContent=fN(r.clicks);document.getElementById('k-cl-d').innerHTML=dlt(r.clicks,q.clicks,false);
+  document.getElementById('k-im').textContent=fN(r.impressions);document.getElementById('k-im-d').innerHTML=dlt(r.impressions,q.impressions,false);
+  document.getElementById('k-ct').textContent=fP(r.ctr);document.getElementById('k-ct-d').innerHTML=dlt(r.ctr,q.ctr,false);
+  document.getElementById('k-po').textContent=r.position?.toFixed(1)||'—';document.getElementById('k-po-d').innerHTML=dlt(r.position,q.position,true);
+}
+async function loadTL(){
+  const d=await gscQ({startDate:ago(S.days+3),endDate:ago(3),dimensions:['date'],rowLimit:100});
+  const rows=(d.rows||[]).sort((a,b)=>a.keys[0].localeCompare(b.keys[0]));
+  if(S.charts.tl)try{S.charts.tl.destroy();}catch(e){}
+  S.charts.tl=new Chart(document.getElementById('ch-tl').getContext('2d'),{type:'line',data:{labels:rows.map(r=>r.keys[0].slice(5)),datasets:[{label:'Clics',data:rows.map(r=>r.clicks),borderColor:'#e8352a',backgroundColor:'rgba(232,53,42,0.06)',tension:.4,fill:true,pointRadius:0,borderWidth:2,yAxisID:'y'},{label:'Imp.',data:rows.map(r=>r.impressions),borderColor:'#bbb',backgroundColor:'rgba(0,0,0,0.02)',tension:.4,fill:true,pointRadius:0,borderWidth:1.5,borderDash:[4,3],yAxisID:'y1'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#888',font:{size:10},maxTicksLimit:8},grid:{color:'#f0f0ee'}},y:{display:false},y1:{display:false}}}});
+}
+async function loadKW(){
+  const[c,p]=await Promise.all([gscQ({startDate:ago(S.days+3),endDate:ago(3),dimensions:['query'],rowLimit:25}),gscQ({startDate:ago(S.days*2+3),endDate:ago(S.days+3),dimensions:['query'],rowLimit:50})]);
+  const prev={};(p.rows||[]).forEach(r=>{prev[r.keys[0]]=r;});
+  S.kws=c.rows||[];
+  const tb=document.getElementById('kw-body'),cb=document.getElementById('ctr-body');
+  tb.innerHTML='';cb.innerHTML='';
+  S.kws.slice(0,10).forEach(r=>{
+    const q=r.keys[0],pos=r.position,pr=prev[q];
+    const pc=pos<=3?'pt3':pos<=10?'pt10':pos<=20?'pt20':'prs';
+    let ch;if(!pr)ch=`<span class="chip chn">nuevo</span>`;else{const d=Math.round(pr.position-pos);if(d>0)ch=`<span class="chip chu">▲${d}</span>`;else if(d<0)ch=`<span class="chip chd">▼${Math.abs(d)}</span>`;else ch=`<span class="chip chs">—</span>`;}
+    tb.innerHTML+=`<tr><td class="kq" title="${q}">${q}</td><td><span class="pbadge ${pc}">${pos.toFixed(1)}</span></td><td>${fN(r.clicks)}</td><td>${fP(r.ctr)}</td><td>${ch}</td></tr>`;
+    cb.innerHTML+=`<div class="ctr-r"><span class="ctr-l">${q}</span><div class="ctr-t"><div class="ctr-f" style="width:${Math.min(100,r.ctr*100*5)}%"></div></div><span class="ctr-p">${fP(r.ctr)}</span></div>`;
+  });
+  const b=[0,0,0,0,0];S.kws.forEach(r=>{const p=r.position;if(p<=3)b[0]++;else if(p<=10)b[1]++;else if(p<=20)b[2]++;else if(p<=50)b[3]++;else b[4]++;});
+  if(S.charts.pos)try{S.charts.pos.destroy();}catch(e){}
+  S.charts.pos=new Chart(document.getElementById('ch-pos').getContext('2d'),{type:'doughnut',data:{labels:['Top 3','Top 10','Top 20','Top 50','50+'],datasets:[{data:b,backgroundColor:['#16a34a','#3b82f6','#e8352a','#f59e0b','#ddd'],borderColor:'#fff',borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,cutout:'70%',plugins:{legend:{position:'bottom',labels:{color:'#555',font:{size:10},padding:8,boxWidth:8}}}}});
+}
+
+// ─── AEO ─────────────────────────────────────────────────────────────────────
+async function loadAEO(){
+  if(!S.token||!S.url)return;
+  document.getElementById('aeo-s').textContent=`${S.name} · últimos ${S.days} días`;
+  document.getElementById('aeo-conv-body').innerHTML='<div class="empty">Cargando…</div>';
+  try{await loadAEOConversational();}catch(e){console.error('AEO:',e.message);}
+}
+async function loadAEOConversational(){
+  const data=await gscQ({startDate:ago(S.days+3),endDate:ago(3),dimensions:['query'],rowLimit:200});
+  const AI_INTENT=/\b(qué|como|cuál|cuáles|cuánto|cuántos|cuándo|dónde|por qué|mejor|mejores|cómo|diferencia|comparar|recomienda|sirve|funciona|what|how|which|when|where|why|best|difference|compare|recommend)\b/i;
+  const conv=(data.rows||[]).filter(r=>{const q=r.keys[0];return q.trim().split(/\s+/).length>=5||AI_INTENT.test(q);}).sort((a,b)=>b.impressions-a.impressions).slice(0,20);
+  const el=document.getElementById('aeo-conv-body');
+  if(!conv.length){el.innerHTML='<div class="empty">Sin queries conversacionales en este período.</div>';return;}
+  el.innerHTML=conv.map(r=>{
+    const words=r.keys[0].trim().split(/\s+/).length;
+    const isLong=words>=5;const isIntent=AI_INTENT.test(r.keys[0]);
+    return`<div class="conv-q"><div class="conv-q-text">${r.keys[0]}</div><div class="conv-q-meta">${isLong?`<span class="conv-badge cb-long">${words} pal.</span>`:''} ${isIntent?'<span class="conv-badge cb-conv">intención IA</span>':''} <span class="conv-badge cb-imp">${fN(r.impressions)} imp.</span><span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--gray-400)">${fP(r.ctr)} CTR</span></div></div>`;
+  }).join('');
+}
+
+// ─── CAMPAÑAS ────────────────────────────────────────────────────────────────
+async function loadCamp(){
+  if(!S.token||!S.id)return;
+  const client=clients().find(x=>x.id===S.id);
+  if(!client?.ga4){document.getElementById('camp-no-ga4').style.display='block';['camp-loading','camp-error','camp-kpis','camp-main','camp-tl-panel'].forEach(id=>document.getElementById(id).style.display='none');return;}
+  document.getElementById('camp-s').textContent=`${S.name} · últimos ${S.days} días`;
+  document.getElementById('camp-no-ga4').style.display='none';document.getElementById('camp-error').style.display='none';document.getElementById('camp-kpis').style.display='none';document.getElementById('camp-main').style.display='none';document.getElementById('camp-tl-panel').style.display='none';document.getElementById('camp-loading').style.display='block';
+  if(S.charts.camp)try{S.charts.camp.destroy();}catch(e){}
+  if(S.charts.campTl)try{S.charts.campTl.destroy();}catch(e){}
+  const propId=client.ga4;
+  const ga4Post=async body=>{const res=await fetch(`https://analyticsdata.googleapis.com/v1beta/properties/${propId}:runReport`,{method:'POST',headers:{Authorization:`Bearer ${S.token}`,'Content-Type':'application/json'},body:JSON.stringify(body)});if(!res.ok){const e=await res.json();throw new Error(e.error?.message||`GA4 ${res.status}`);}return res.json();};
+  const paidFilter={orGroup:{expressions:[{filter:{fieldName:'sessionMedium',stringFilter:{matchType:'EXACT',value:'cpc',caseSensitive:false}}},{filter:{fieldName:'sessionMedium',stringFilter:{matchType:'EXACT',value:'paid',caseSensitive:false}}}]}};
+  try{
+    const[campData,campPrev,tlData]=await Promise.all([
+      ga4Post({dateRanges:[{startDate:ago(S.days+3),endDate:ago(3)}],dimensions:[{name:'sessionCampaignName'}],metrics:[{name:'sessions'},{name:'conversions'},{name:'advertiserAdCostPerConversion'},{name:'averageSessionDuration'}],dimensionFilter:paidFilter,orderBys:[{metric:{metricName:'sessions'},desc:true}],limit:20}),
+      ga4Post({dateRanges:[{startDate:ago(S.days*2+3),endDate:ago(S.days+3)}],dimensions:[{name:'sessionMedium'}],metrics:[{name:'sessions'},{name:'conversions'}],dimensionFilter:paidFilter,limit:10}),
+      ga4Post({dateRanges:[{startDate:ago(S.days+3),endDate:ago(3)}],dimensions:[{name:'date'}],metrics:[{name:'sessions'},{name:'conversions'}],dimensionFilter:paidFilter,orderBys:[{dimension:{dimensionName:'date'}}],limit:100})
+    ]);
+    document.getElementById('camp-loading').style.display='none';
+    const rows=campData.rows||[];
+    let totSess=0,totConv=0,totDur=0,totDurCount=0;
+    rows.forEach(r=>{const sess=parseFloat(r.metricValues[0].value)||0;totSess+=sess;totConv+=parseFloat(r.metricValues[1].value)||0;totDur+=(parseFloat(r.metricValues[3].value)||0)*sess;totDurCount+=sess;});
+    const totCpc=totConv>0?(rows.reduce((s,r)=>{const conv=parseFloat(r.metricValues[1].value)||0;const cpc=parseFloat(r.metricValues[2].value)||0;return s+cpc*conv;},0)/totConv):0;
+    const prevSess=(campPrev.rows||[]).reduce((s,r)=>s+(parseFloat(r.metricValues[0].value)||0),0);
+    const prevConv=(campPrev.rows||[]).reduce((s,r)=>s+(parseFloat(r.metricValues[1].value)||0),0);
+    document.getElementById('camp-k-sess').textContent=fN(totSess);document.getElementById('camp-k-sess-d').innerHTML=dlt(totSess,prevSess,false);
+    document.getElementById('camp-k-conv').textContent=fN(totConv);document.getElementById('camp-k-conv-d').innerHTML=dlt(totConv,prevConv,false);
+    document.getElementById('camp-k-cpc').textContent=totCpc>0?`$${Math.round(totCpc).toLocaleString('es-CL')}`:'—';
+    document.getElementById('camp-k-dur').textContent=fSec(totDurCount>0?totDur/totDurCount:0);
+    document.getElementById('camp-kpis').style.display='grid';
+    const tbody=document.getElementById('camp-tbody');
+    tbody.innerHTML=!rows.length?`<tr><td colspan="5" style="text-align:center;color:var(--gray-400);font-family:'DM Mono',monospace;font-size:11px;padding:16px">Sin campañas pagas en este período.</td></tr>`:rows.map(r=>{const nm=r.dimensionValues[0].value||'(sin nombre)';return`<tr><td style="font-size:12px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${nm}">${nm}</td><td>${fN(parseFloat(r.metricValues[0].value))}</td><td>${fN(parseFloat(r.metricValues[1].value))}</td><td>${parseFloat(r.metricValues[2].value)>0?`$${Math.round(parseFloat(r.metricValues[2].value)).toLocaleString('es-CL')}`:'—'}</td><td>${fSec(parseFloat(r.metricValues[3].value))}</td></tr>`;}).join('');
+    const top8=rows.slice(0,8);
+    S.charts.camp=new Chart(document.getElementById('ch-camp').getContext('2d'),{type:'bar',data:{labels:top8.map(r=>{const n=r.dimensionValues[0].value||'(sin nombre)';return n.length>18?n.slice(0,16)+'…':n;}),datasets:[{label:'Sesiones',data:top8.map(r=>parseFloat(r.metricValues[0].value)||0),backgroundColor:'#e8352a',borderRadius:4,yAxisID:'y'},{label:'Conversiones',data:top8.map(r=>parseFloat(r.metricValues[1].value)||0),backgroundColor:'#3b82f6',borderRadius:4,yAxisID:'y1'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#555',font:{size:10},boxWidth:8}}},scales:{x:{ticks:{color:'#888',font:{size:9}},grid:{color:'#f0f0ee'}},y:{position:'left',ticks:{color:'#888',font:{size:10}},grid:{color:'#f0f0ee'}},y1:{position:'right',ticks:{color:'#3b82f6',font:{size:10}},grid:{display:false}}}}});
+    document.getElementById('camp-main').style.display='grid';
+    const tlRows=tlData.rows||[];
+    S.charts.campTl=new Chart(document.getElementById('ch-camp-tl').getContext('2d'),{type:'line',data:{labels:tlRows.map(r=>r.dimensionValues[0].value.slice(4)),datasets:[{label:'Sesiones',data:tlRows.map(r=>parseFloat(r.metricValues[0].value)||0),borderColor:'#e8352a',backgroundColor:'rgba(232,53,42,0.06)',tension:.4,fill:true,pointRadius:0,borderWidth:2,yAxisID:'y'},{label:'Conversiones',data:tlRows.map(r=>parseFloat(r.metricValues[1].value)||0),borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,0.04)',tension:.4,fill:false,pointRadius:0,borderWidth:1.5,borderDash:[4,3],yAxisID:'y1'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#555',font:{size:10},boxWidth:8}}},scales:{x:{ticks:{color:'#888',font:{size:10},maxTicksLimit:8},grid:{color:'#f0f0ee'}},y:{display:false},y1:{display:false}}}});
+    document.getElementById('camp-tl-panel').style.display='block';
+  }catch(e){document.getElementById('camp-loading').style.display='none';const errEl=document.getElementById('camp-error');errEl.textContent=`⚠ Error: ${e.message}`;errEl.style.display='block';}
+}
+
+// ─── GEO ─────────────────────────────────────────────────────────────────────
+function renderGEO(){
+  document.getElementById('geo-s').textContent=`${S.name} · últimos ${S.days} días`;
+  const c=clients().find(x=>x.id===S.id);
+  const hasGA4=c&&c.ga4;
+  document.getElementById('geo-ga4-btn').style.display=hasGA4?'':'none';
+  if(hasGA4){loadGA4GEO();}else{showNoGA4();}
+}
+function showNoGA4(){
+  document.getElementById('geo-kpis').style.display='none';document.getElementById('geo-ga4-section').style.display='none';
+  document.getElementById('geo-ga4-loading').style.display='none';document.getElementById('geo-ga4-error').style.display='none';
+  document.getElementById('geo-no-ga4').style.display='block';
+}
+async function loadGA4GEO(){
+  if(!S.token||!S.id)return;
+  const c=clients().find(x=>x.id===S.id);
+  if(!c?.ga4){showNoGA4();return;}
+  const propId=c.ga4;
+  document.getElementById('geo-no-ga4').style.display='none';document.getElementById('geo-ga4-error').style.display='none';document.getElementById('geo-ga4-section').style.display='none';document.getElementById('geo-kpis').style.display='none';document.getElementById('geo-ga4-loading').style.display='block';
+  const allDomains=AI_SOURCES.flatMap(s=>s.domains);
+  const domainFilter={orGroup:{expressions:allDomains.map(d=>({filter:{fieldName:'sessionSource',stringFilter:{matchType:'CONTAINS',value:d,caseSensitive:false}}}))}};
+  const makeBody=(startDate,endDate)=>({dateRanges:[{startDate,endDate}],dimensions:[{name:'sessionSource'}],metrics:[{name:'sessions'},{name:'totalUsers'},{name:'conversions'},{name:'averageSessionDuration'}],dimensionFilter:domainFilter,limit:200});
+  const ga4Fetch=async body=>{const res=await fetch(`https://analyticsdata.googleapis.com/v1beta/properties/${propId}:runReport`,{method:'POST',headers:{Authorization:`Bearer ${S.token}`,'Content-Type':'application/json'},body:JSON.stringify(body)});if(!res.ok){const e=await res.json();throw new Error(e.error?.message||`GA4 ${res.status}`);}return res.json();};
+  try{
+    const[currData,prevData]=await Promise.all([ga4Fetch(makeBody(ago(S.days+3),ago(3))),ga4Fetch(makeBody(ago(S.days*2+3),ago(S.days+3)))]);
+    processGA4Data(currData,prevData);
+  }catch(e){document.getElementById('geo-ga4-loading').style.display='none';const errEl=document.getElementById('geo-ga4-error');errEl.textContent=`⚠ Error GA4: ${e.message}`;errEl.style.display='block';}
+}
+function processGA4Data(currData,prevData){
+  document.getElementById('geo-ga4-loading').style.display='none';
+  const agg={};AI_SOURCES.forEach(s=>{agg[s.key]={label:s.label,color:s.color,curr:{sessions:0,users:0,conv:0,dur:0,durCount:0},prev:{sessions:0,users:0,conv:0}};});
+  const parseRows=(rows,bucket)=>{(rows||[]).forEach(row=>{const src=row.dimensionValues[0].value.toLowerCase();const sessions=parseFloat(row.metricValues[0].value)||0;const users=parseFloat(row.metricValues[1].value)||0;const conv=parseFloat(row.metricValues[2].value)||0;const dur=parseFloat(row.metricValues[3].value)||0;const match=AI_SOURCES.find(s=>s.domains.some(d=>src.includes(d)));if(!match)return;agg[match.key][bucket].sessions+=sessions;agg[match.key][bucket].users+=users;agg[match.key][bucket].conv+=conv;if(bucket==='curr'){agg[match.key].curr.dur+=dur*sessions;agg[match.key].curr.durCount+=sessions;}});};
+  parseRows(currData.rows,'curr');parseRows(prevData.rows,'prev');
+  const totCurrSess=Object.values(agg).reduce((s,v)=>s+v.curr.sessions,0);const totPrevSess=Object.values(agg).reduce((s,v)=>s+v.prev.sessions,0);
+  const totCurrUsr=Object.values(agg).reduce((s,v)=>s+v.curr.users,0);const totPrevUsr=Object.values(agg).reduce((s,v)=>s+v.prev.users,0);
+  const totCurrConv=Object.values(agg).reduce((s,v)=>s+v.curr.conv,0);const totPrevConv=Object.values(agg).reduce((s,v)=>s+v.prev.conv,0);
+  document.getElementById('geo-k-sess').textContent=fN(totCurrSess);document.getElementById('geo-k-sess-d').innerHTML=dlt(totCurrSess,totPrevSess,false);
+  document.getElementById('geo-k-usr').textContent=fN(totCurrUsr);document.getElementById('geo-k-usr-d').innerHTML=dlt(totCurrUsr,totPrevUsr,false);
+  document.getElementById('geo-k-conv').textContent=fN(totCurrConv);document.getElementById('geo-k-conv-d').innerHTML=dlt(totCurrConv,totPrevConv,false);
+  document.getElementById('geo-kpis').style.display='grid';
+  const sorted=Object.values(agg).sort((a,b)=>b.curr.sessions-a.curr.sessions);
+  document.getElementById('geo-ga4-body').innerHTML=sorted.map(s=>{const avgDur=s.curr.durCount>0?s.curr.dur/s.curr.durCount:0;return`<tr><td><div class="ga4-src"><span class="ga4-dot" style="background:${s.color}"></span>${s.label}</div></td><td>${fN(s.curr.sessions)} ${s.prev.sessions>0?dlt(s.curr.sessions,s.prev.sessions,false):''}</td><td>${fN(s.curr.users)}</td><td>${fN(s.curr.conv)}</td><td>${fSec(avgDur)}</td></tr>`;}).join('');
+  if(S.charts.geoTraffic)try{S.charts.geoTraffic.destroy();}catch(e){}
+  S.charts.geoTraffic=new Chart(document.getElementById('ch-geo-traffic').getContext('2d'),{type:'bar',data:{labels:sorted.map(s=>s.label.split('/')[0].trim()),datasets:[{label:'Per. anterior',data:sorted.map(s=>s.prev.sessions),backgroundColor:'#f0f0ee',borderRadius:4},{label:'Período actual',data:sorted.map(s=>s.curr.sessions),backgroundColor:sorted.map(s=>s.color),borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#555',font:{size:10},boxWidth:8}}},scales:{x:{ticks:{color:'#888',font:{size:10}},grid:{color:'#f0f0ee'}},y:{ticks:{color:'#888',font:{size:10}},grid:{color:'#f0f0ee'}}}}});
+  document.getElementById('geo-ga4-section').style.display='grid';
+}
+
+// ─── RECOMENDACIONES ─────────────────────────────────────────────────────────
 async function loadRec(force=false){
-  if(!S.token||!S.id){
-    document.getElementById('rec-empty').style.display='block';
-    ['rec-loading','rec-error','rec-content','rec-summary-box'].forEach(id=>document.getElementById(id).style.display='none');
-    return;
-  }
+  if(!S.token||!S.id){document.getElementById('rec-empty').style.display='block';['rec-loading','rec-error','rec-content'].forEach(id=>document.getElementById(id).style.display='none');return;}
   document.getElementById('rec-s').textContent=`${S.name} · ${S.days} días`;
-  // If already has content and not forced, just show it
-  if(!force && document.getElementById('rec-content').style.display!=='none') return;
-
+  if(!force&&document.getElementById('rec-content').style.display!=='none')return;
   ['rec-empty','rec-error','rec-content'].forEach(id=>document.getElementById(id).style.display='none');
   document.getElementById('rec-summary-box').style.display='none';
   document.getElementById('rec-loading').style.display='block';
   document.getElementById('rec-loading-txt').textContent='Recopilando datos del cliente…';
   document.getElementById('rec-btn').disabled=true;
-
-  // Gather all available data
-  const dataContext = {};
-
-  // SEO data from cache or fresh fetch
-  try{
-    if(!S.kws.length){
-      const d=await gscQ({startDate:ago(S.days+3),endDate:ago(3),dimensions:['query'],rowLimit:25});
-      S.kws=d.rows||[];
-    }
-    const sum=await gscQ({startDate:ago(S.days+3),endDate:ago(3),rowLimit:1});
-    const r=sum.rows?.[0]||{};
-    dataContext.seo={
-      clicks:r.clicks||0, impressions:r.impressions||0,
-      ctr:r.ctr?+(r.ctr*100).toFixed(1):0, position:r.position?.toFixed(1)||'—',
-      topKeywords:S.kws.slice(0,15).map(k=>({
-        query:k.keys[0], pos:+k.position.toFixed(1),
-        clicks:k.clicks, ctr:+(k.ctr*100).toFixed(1)
-      }))
-    };
-  }catch(e){dataContext.seo=null;}
-
-  // Conversational queries (AEO proxy)
-  try{
-    const d=await gscQ({startDate:ago(S.days+3),endDate:ago(3),dimensions:['query'],rowLimit:200});
-    const AI_INTENT=/(qué|como|cuál|cuáles|cuánto|cuántos|cuándo|dónde|por qué|mejor|mejores|cómo|diferencia|comparar|recomienda|sirve|funciona|what|how|which|when|where|why|best|difference|compare|recommend|vs)/i;
-    dataContext.aeo=(d.rows||[])
-      .filter(r=>r.keys[0].trim().split(/\s+/).length>=5||AI_INTENT.test(r.keys[0]))
-      .sort((a,b)=>b.impressions-a.impressions).slice(0,10)
-      .map(r=>({query:r.keys[0],impressions:r.impressions,ctr:+(r.ctr*100).toFixed(1),pos:+r.position.toFixed(1)}));
-  }catch(e){dataContext.aeo=null;}
-
-  // Campaign data from GA4 if available
+  const dataContext={};
+  try{if(!S.kws.length){const d=await gscQ({startDate:ago(S.days+3),endDate:ago(3),dimensions:['query'],rowLimit:25});S.kws=d.rows||[];}const sum=await gscQ({startDate:ago(S.days+3),endDate:ago(3),rowLimit:1});const r=sum.rows?.[0]||{};dataContext.seo={clicks:r.clicks||0,impressions:r.impressions||0,ctr:r.ctr?+(r.ctr*100).toFixed(1):0,position:r.position?.toFixed(1)||'—',topKeywords:S.kws.slice(0,15).map(k=>({query:k.keys[0],pos:+k.position.toFixed(1),clicks:k.clicks,ctr:+(k.ctr*100).toFixed(1)}))};} catch(e){dataContext.seo=null;}
+  try{const d=await gscQ({startDate:ago(S.days+3),endDate:ago(3),dimensions:['query'],rowLimit:200});const AI_INTENT=/\b(qué|como|cuál|mejor|cómo|diferencia|comparar|recomienda|what|how|which|best|compare)\b/i;dataContext.aeo=(d.rows||[]).filter(r=>r.keys[0].trim().split(/\s+/).length>=5||AI_INTENT.test(r.keys[0])).sort((a,b)=>b.impressions-a.impressions).slice(0,10).map(r=>({query:r.keys[0],impressions:r.impressions,ctr:+(r.ctr*100).toFixed(1),pos:+r.position.toFixed(1)}));}catch(e){dataContext.aeo=null;}
   const client=clients().find(x=>x.id===S.id);
-  if(client?.ga4){
-    try{
-      const res=await fetch(`https://analyticsdata.googleapis.com/v1beta/properties/${client.ga4}:runReport`,{
-        method:'POST',
-        headers:{Authorization:`Bearer ${S.token}`,'Content-Type':'application/json'},
-        body:JSON.stringify({
-          dateRanges:[{startDate:ago(S.days+3),endDate:ago(3)}],
-          dimensions:[{name:'sessionCampaignName'}],
-          metrics:[{name:'sessions'},{name:'conversions'},{name:'advertiserAdCostPerConversion'},{name:'averageSessionDuration'}],
-          dimensionFilter:{orGroup:{expressions:[
-            {filter:{fieldName:'sessionMedium',stringFilter:{matchType:'EXACT',value:'cpc',caseSensitive:false}}},
-            {filter:{fieldName:'sessionMedium',stringFilter:{matchType:'EXACT',value:'paid',caseSensitive:false}}}
-          ]}},
-          orderBys:[{metric:{metricName:'sessions'},desc:true}],limit:10
-        })
-      });
-      if(res.ok){
-        const d=await res.json();
-        dataContext.campaigns=(d.rows||[]).map(r=>({
-          name:r.dimensionValues[0].value,
-          sessions:+r.metricValues[0].value,
-          conversions:+r.metricValues[1].value,
-          costPerConv:+r.metricValues[2].value,
-          avgDuration:+r.metricValues[3].value
-        }));
-      }
-    }catch(e){dataContext.campaigns=null;}
-  }
-
+  if(client?.ga4){try{const res=await fetch(`https://analyticsdata.googleapis.com/v1beta/properties/${client.ga4}:runReport`,{method:'POST',headers:{Authorization:`Bearer ${S.token}`,'Content-Type':'application/json'},body:JSON.stringify({dateRanges:[{startDate:ago(S.days+3),endDate:ago(3)}],dimensions:[{name:'sessionCampaignName'}],metrics:[{name:'sessions'},{name:'conversions'},{name:'advertiserAdCostPerConversion'},{name:'averageSessionDuration'}],dimensionFilter:{orGroup:{expressions:[{filter:{fieldName:'sessionMedium',stringFilter:{matchType:'EXACT',value:'cpc',caseSensitive:false}}}]}},orderBys:[{metric:{metricName:'sessions'},desc:true}],limit:10})});if(res.ok){const d=await res.json();dataContext.campaigns=(d.rows||[]).map(r=>({name:r.dimensionValues[0].value,sessions:+r.metricValues[0].value,conversions:+r.metricValues[1].value,costPerConv:+r.metricValues[2].value,avgDuration:+r.metricValues[3].value}));}}catch(e){dataContext.campaigns=null;}}
   document.getElementById('rec-loading-txt').textContent='Analizando con Claude AI…';
+  const prompt=`Eres consultor experto en SEO, AEO y Google Ads para empresas latinoamericanas. Analiza los datos del cliente "${S.name}" (${S.url}) para los últimos ${S.days} días.
 
-  // Build prompt with real data
-  const prompt=`Eres un consultor experto en SEO, AEO (Answer Engine Optimization), posicionamiento en IAs y Google Ads.
-Analiza los siguientes datos reales del cliente "${S.name}" (${S.url}) para los últimos ${S.days} días y genera recomendaciones específicas y accionables.
+DATOS SEO: ${dataContext.seo?`Clics:${dataContext.seo.clicks} Imp:${dataContext.seo.impressions} CTR:${dataContext.seo.ctr}% Pos:${dataContext.seo.position} | Top keywords: ${dataContext.seo.topKeywords.map(k=>`"${k.query}" pos:${k.pos} clics:${k.clicks} CTR:${k.ctr}%`).join(', ')}`:'Sin datos'}
 
-DATOS SEO:
-${dataContext.seo ? `- Clics: ${dataContext.seo.clicks} | Impresiones: ${dataContext.seo.impressions} | CTR: ${dataContext.seo.ctr}% | Posición media: ${dataContext.seo.position}
-- Top keywords: ${dataContext.seo.topKeywords.map(k=>`"${k.query}" pos:${k.pos} clics:${k.clicks} CTR:${k.ctr}%`).join(', ')}` : 'Sin datos SEO disponibles'}
+DATOS AEO (queries conversacionales): ${dataContext.aeo?.length?dataContext.aeo.map(q=>`"${q.query}" imp:${q.impressions} CTR:${q.ctr}%`).join(' | '):'Sin datos'}
 
-DATOS AEO (queries conversacionales detectadas):
-${dataContext.aeo?.length ? dataContext.aeo.map(q=>`"${q.query}" imp:${q.impressions} CTR:${q.ctr}% pos:${q.pos}`).join('
-') : 'Sin queries conversacionales detectadas'}
+DATOS CAMPAÑAS: ${dataContext.campaigns?.length?dataContext.campaigns.map(c=>`"${c.name}": ${c.sessions} ses, ${c.conversions} conv, $${Math.round(c.costPerConv)}/conv`).join(' | '):'Sin campañas o no configurado'}
 
-DATOS CAMPAÑAS GOOGLE ADS (via GA4):
-${dataContext.campaigns?.length ? dataContext.campaigns.map(c=>`Campaña "${c.name}": ${c.sessions} sesiones, ${c.conversions} conversiones, costo/conv: $${Math.round(c.costPerConv)}, duración sesión: ${Math.round(c.avgDuration)}s`).join('
-') : 'Sin datos de campañas o no configurado'}
-
-Responde SOLO en este JSON (sin markdown, sin texto extra):
-{
-  "resumen": "2-3 oraciones con el estado general del cliente y prioridad principal",
-  "seo": [
-    {"prioridad": "alta|media|baja", "titulo": "título corto", "recomendacion": "acción concreta y específica basada en los datos"}
-  ],
-  "aeo": [
-    {"prioridad": "alta|media|baja", "titulo": "título corto", "recomendacion": "acción concreta y específica"}
-  ],
-  "campanas": [
-    {"prioridad": "alta|media|baja", "titulo": "título corto", "recomendacion": "acción concreta y específica"}
-  ]
-}
-Genera 3-4 recomendaciones por área. Si no hay datos de un área, genera recomendaciones generales de buenas prácticas para ese tipo de sitio.`;
-
+Responde SOLO en JSON válido sin markdown:
+{"resumen":"2-3 oraciones del estado general","seo":[{"prioridad":"alta|media|baja","titulo":"título","recomendacion":"acción concreta"}],"aeo":[{"prioridad":"alta|media|baja","titulo":"título","recomendacion":"acción concreta"}],"campanas":[{"prioridad":"alta|media|baja","titulo":"título","recomendacion":"acción concreta"}]}
+Genera 3-4 recomendaciones por área. Sé específico con los datos reales, no genérico.`;
   try{
-    const res=await fetch('https://claude-proxy.paulete.workers.dev',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        model:'claude-sonnet-4-20250514',
-        max_tokens:2000,
-        system:'Eres consultor experto en SEO, AEO y Google Ads para empresas latinoamericanas. Responde siempre en español. Sé específico y accionable, no genérico.',
-        messages:[{role:'user',content:prompt}]
-      })
-    });
+    const res=await fetch('https://claude-proxy.paulete.workers.dev',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:2000,system:'Eres consultor experto en SEO, AEO y Google Ads. Responde siempre en español con recomendaciones específicas y accionables.',messages:[{role:'user',content:prompt}]})});
+    const data=await res.json();
+    const txt=data.content?.[0]?.text||'';
+    let parsed;try{parsed=JSON.parse(txt.replace(/```json|```/g,'').trim());}catch(e){throw new Error('No se pudo parsear la respuesta. Intenta de nuevo.');}
+    if(parsed.resumen){document.getElementById('rec-summary-txt').textContent=parsed.resumen;document.getElementById('rec-summary-box').style.display='block';}
+    const prioColor={'alta':'','media':'blue','baja':'green'};
+    const renderItems=(items,containerId)=>{const el=document.getElementById(containerId);if(!items?.length){el.innerHTML='<div class="rec-item" style="color:var(--gray-400)">Sin recomendaciones para esta área.</div>';return;}el.innerHTML=items.map(item=>`<div class="rec-item"><span class="rec-tag ${prioColor[item.prioridad]||''}">${(item.prioridad||'info').toUpperCase()}</span><strong>${item.titulo}</strong><br>${item.recomendacion}</div>`).join('');};
+    renderItems(parsed.seo,'rec-seo-items');renderItems(parsed.aeo,'rec-aeo-items');renderItems(parsed.campanas,'rec-camp-items');
+    document.getElementById('rec-loading').style.display='none';document.getElementById('rec-content').style.display='block';
+  }catch(e){document.getElementById('rec-loading').style.display='none';const errEl=document.getElementById('rec-error');errEl.textContent=`⚠ ${e.message}`;errEl.style.display='block';}
+  document.getElementById('rec-btn').disabled=false;
+}
+
+// ─── EXPORT / IMPORT ─────────────────────────────────────────────────────────
+function exportClients(){
+  const list=clients();if(!list.length){alert('No hay clientes para exportar.');return;}
+  const blob=new Blob([JSON.stringify(list,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`bigbuda-clientes-${new Date().toISOString().slice(0,10)}.json`;a.click();
+}
+function importClients(input){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{try{const imported=JSON.parse(e.target.result);if(!Array.isArray(imported))throw new Error('Formato inválido');const existing=clients();const existingUrls=new Set(existing.map(c=>c.url));const newOnes=imported.filter(c=>!existingUrls.has(c.url));ls.s('bb_cl',[...existing,...newOnes]);renderCL();alert(newOnes.length?`✓ ${newOnes.length} cliente(s) importado(s).`:'Todos los clientes ya estaban en tu lista.');}catch(err){alert('Error al importar: '+err.message);}input.value='';};
+  reader.readAsText(file);
+}
+
+// ─── POLAROID ────────────────────────────────────────────────────────────────
+function takePolaroid(){
+  const date=new Date().toLocaleDateString('es-CL',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  document.getElementById('pdf-logo').textContent=S.name||'Bigbuda';
+  document.getElementById('pdf-meta').textContent=`Reporte SEO · AEO · GEO · Campañas — ${date} — ${S.days} días`;
+  const screens=document.querySelectorAll('.screen');
+  screens.forEach(s=>{if(s.id!=='sc-auth')s.classList.add('on');});
+  window.print();
+  setTimeout(()=>{screens.forEach(s=>s.classList.remove('on'));const activeId='sc-'+(['rec','seo','aeo','camp','geo'].find(n=>document.getElementById('nv-'+n)?.classList.contains('on'))||'seo');document.getElementById(activeId)?.classList.add('on');},1000);
+}
+</script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 14px; }
+body { font-family: 'DM Sans', sans-serif; background: #f5f5f3; color: #111; min-height: 100vh; -webkit-font-smoothing: antialiased; }
+:root {
+  --red:#e8352a; --red-light:#fff0ef; --red-mid:#ffdcda;
+  --black:#111; --gray-900:#222; --gray-600:#555; --gray-400:#888;
+  --gray-100:#f0f0ee; --white:#fff; --border:#e5e5e3;
+  --success:#16a34a; --blue:#3b82f6;
+  --radius:6px; --radius-lg:10px;
+  --shadow:0 1px 3px rgba(0,0,0,0.08),0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md:0 4px 16px rgba(0,0,0,0.10);
+}
+.shell { display:flex; min-height:100vh; }
+.sidebar { width:220px; flex-shrink:0; background:var(--white); border-right:1px solid var(--border); display:flex; flex-direction:column; position:fixed; top:0; bottom:0; left:0; z-index:100; overflow-y:auto; }
+.sidebar-logo { padding:18px 16px 14px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:10px; cursor:pointer; position:relative; flex-shrink:0; }
+.logo-ph { width:30px; height:30px; border-radius:6px; background:var(--black); display:flex; align-items:center; justify-content:center; color:white; font-size:12px; font-weight:600; flex-shrink:0; }
+.logo-img { width:30px; height:30px; border-radius:6px; object-fit:contain; flex-shrink:0; }
+.logo-text { font-size:13px; font-weight:600; color:var(--black); }
+.logo-sub { font-size:10px; color:var(--gray-400); font-family:'DM Mono',monospace; }
+.logo-hint { position:absolute; inset:0; background:rgba(255,255,255,.9); display:flex; align-items:center; justify-content:center; font-size:10px; color:var(--gray-600); opacity:0; transition:.15s; pointer-events:none; font-family:'DM Mono',monospace; border-radius:inherit; }
+.sidebar-logo:hover .logo-hint { opacity:1; }
+#logo-inp { display:none; }
+.s-sec { padding:12px 10px 4px; flex-shrink:0; }
+.s-lbl { font-size:10px; font-family:'DM Mono',monospace; color:var(--gray-400); text-transform:uppercase; letter-spacing:.1em; padding:0 8px; margin-bottom:4px; display:flex; align-items:center; justify-content:space-between; }
+.nav { display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:var(--radius); cursor:pointer; font-size:13px; color:var(--gray-600); transition:all .12s; user-select:none; }
+.nav:hover { background:var(--gray-100); color:var(--black); }
+.nav.on { background:var(--red-light); color:var(--red); font-weight:500; }
+.ndot { width:6px; height:6px; border-radius:50%; background:#ddd; flex-shrink:0; }
+.nav.on .ndot { background:var(--red); }
+.clist { max-height:200px; overflow-y:auto; }
+.ci { display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:var(--radius); cursor:pointer; transition:background .12s; position:relative; }
+.ci:hover { background:var(--gray-100); }
+.ci:hover .ci-del { opacity:1; }
+.ci-av { width:22px; height:22px; border-radius:4px; background:var(--black); display:flex; align-items:center; justify-content:center; color:white; font-size:10px; font-weight:600; flex-shrink:0; }
+.ci-info { flex:1; min-width:0; }
+.ci-nm { font-size:12px; font-weight:500; color:var(--black); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.ci-url { font-size:10px; color:var(--gray-400); font-family:'DM Mono',monospace; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.ci-del { opacity:0; background:none; border:none; cursor:pointer; color:var(--gray-400); font-size:14px; padding:0 2px; flex-shrink:0; transition:color .12s,opacity .12s; }
+.ci-del:hover { color:var(--red); }
+.ci.active .ci-nm { color:var(--red); }
+.ci.active .ci-av { background:var(--red); }
+.s-foot { margin-top:auto; padding:12px 16px; border-top:1px solid var(--border); font-size:10px; color:var(--gray-400); font-family:'DM Mono',monospace; flex-shrink:0; line-height:1.6; }
+.s-foot span { color:var(--red); }
+.main { margin-left:220px; flex:1; min-width:0; }
+.topbar { background:var(--white); border-bottom:1px solid var(--border); padding:0 28px; height:48px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:50; }
+.tl { display:flex; align-items:center; gap:8px; }
+.tc { font-size:12px; color:var(--gray-400); }
+.tt { font-size:13px; font-weight:500; }
+.tr { display:flex; align-items:center; gap:10px; }
+.td { font-size:11px; font-family:'DM Mono',monospace; color:var(--gray-400); }
+.pill { display:flex; align-items:center; gap:5px; background:var(--gray-100); border-radius:20px; padding:3px 10px; font-size:11px; color:var(--gray-600); font-family:'DM Mono',monospace; }
+.pill.ok { background:#f0fdf4; color:var(--success); }
+.pdot { width:6px; height:6px; border-radius:50%; background:#bbb; }
+.pill.ok .pdot { background:var(--success); animation:blink 2s infinite; }
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.content { padding:12px 28px 60px; }
+.screen { display:none; }
+.screen.on { display:block; }
+.auth-wrap { max-width:440px; margin:60px auto; }
+.ae { font-size:11px; font-family:'DM Mono',monospace; color:var(--gray-400); text-transform:uppercase; letter-spacing:.12em; margin-bottom:8px; }
+.ah { font-size:22px; font-weight:600; margin-bottom:4px; }
+.ap { font-size:13px; color:var(--gray-600); margin-bottom:24px; line-height:1.6; }
+.card { background:var(--white); border:1px solid var(--border); border-radius:var(--radius-lg); padding:20px; box-shadow:var(--shadow); }
+.card+.card { margin-top:10px; }
+.fl { margin-bottom:12px; }
+.fl-l { display:block; font-size:10px; font-family:'DM Mono',monospace; color:var(--gray-600); text-transform:uppercase; letter-spacing:.08em; margin-bottom:4px; }
+.fi { width:100%; height:34px; padding:0 10px; border:1px solid var(--border); border-radius:var(--radius); font-family:'DM Mono',monospace; font-size:12px; color:var(--black); background:var(--white); outline:none; transition:border-color .15s; }
+.fi:focus { border-color:var(--black); }
+.fi::placeholder { color:var(--gray-400); }
+.fsel { width:100%; height:34px; padding:0 10px; border:1px solid var(--border); border-radius:var(--radius); font-family:'DM Mono',monospace; font-size:12px; color:var(--black); background:var(--white); outline:none; cursor:pointer; }
+.btn { height:34px; padding:0 14px; border-radius:var(--radius); font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; cursor:pointer; border:none; transition:all .15s; display:inline-flex; align-items:center; gap:6px; }
+.bb { background:var(--black); color:white; width:100%; justify-content:center; }
+.bb:hover { background:var(--gray-900); }
+.bb:disabled { opacity:.4; cursor:not-allowed; }
+.bo { background:var(--white); color:var(--black); width:100%; justify-content:center; border:1px solid var(--border); }
+.bo:hover { border-color:var(--black); }
+.bg { background:none; border:1px solid var(--border); color:var(--gray-600); height:34px; padding:0 14px; border-radius:var(--radius); font-family:'DM Sans',sans-serif; font-size:13px; cursor:pointer; }
+.bg:hover { border-color:var(--gray-600); }
+.brs { height:26px; padding:0 10px; font-size:11px; font-family:'DM Mono',monospace; background:var(--red-light); border:1px solid var(--red-mid); color:var(--red); border-radius:var(--radius); cursor:pointer; white-space:nowrap; }
+.brs:hover { background:var(--red-mid); }
+.errmsg { background:var(--red-light); border:1px solid var(--red-mid); border-radius:var(--radius); padding:7px 10px; font-size:11px; color:var(--red); font-family:'DM Mono',monospace; margin-top:10px; display:none; }
+.errmsg.on { display:block; }
+.note { font-size:11px; color:var(--gray-400); font-family:'DM Mono',monospace; line-height:1.7; margin-top:8px; }
+.ph { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:10px; flex-wrap:wrap; gap:10px; }
+.ph-t { font-size:17px; font-weight:600; }
+.ph-s { font-size:11px; color:var(--gray-400); font-family:'DM Mono',monospace; margin-top:2px; }
+.rtabs { display:flex; gap:2px; background:var(--gray-100); border-radius:var(--radius); padding:3px; }
+.rtab { padding:3px 10px; border-radius:4px; font-size:11px; font-family:'DM Mono',monospace; color:var(--gray-600); cursor:pointer; border:none; background:transparent; transition:all .12s; }
+.rtab.on { background:var(--white); color:var(--black); font-weight:500; box-shadow:var(--shadow); }
+.kpis { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:14px; }
+@media(max-width:800px){.kpis{grid-template-columns:repeat(2,1fr);}}
+.kpi { background:var(--white); border:1px solid var(--border); border-radius:var(--radius-lg); padding:14px 16px; box-shadow:var(--shadow); position:relative; overflow:hidden; }
+.kpi::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:var(--border); }
+.kpi.hi::before { background:var(--red); }
+.kl { font-size:10px; font-family:'DM Mono',monospace; color:var(--gray-400); text-transform:uppercase; letter-spacing:.1em; margin-bottom:6px; }
+.kv { font-size:24px; font-weight:600; letter-spacing:-.02em; line-height:1; }
+.kd { font-size:11px; font-family:'DM Mono',monospace; margin-top:4px; }
+.up{color:var(--success);} .dn{color:var(--red);}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.g3{display:grid;grid-template-columns:1.7fr 1fr;gap:10px;margin-bottom:10px;}
+@media(max-width:800px){.g2,.g3{grid-template-columns:1fr;}}
+.panel { background:var(--white); border:1px solid var(--border); border-radius:var(--radius-lg); box-shadow:var(--shadow); overflow:hidden; }
+.ph2 { display:flex; align-items:center; justify-content:space-between; padding:12px 16px; border-bottom:1px solid var(--border); }
+.pt { font-size:13px; font-weight:500; }
+.pb2 { padding:14px 16px; }
+.ptag { font-size:10px; font-family:'DM Mono',monospace; padding:2px 7px; border-radius:20px; letter-spacing:.08em; text-transform:uppercase; border:1px solid; }
+.tg{background:#fff0ef;color:var(--red);border-color:var(--red-mid);}
+.ta{background:#eff6ff;color:var(--blue);border-color:#bfdbfe;}
+.tl2{background:#f0fdf4;color:var(--success);border-color:#bbf7d0;}
+.ty{background:#fefce8;color:#ca8a04;border-color:#fde68a;}
+.cw{position:relative;width:100%;height:200px;}
+.kwt{width:100%;border-collapse:collapse;font-size:12px;}
+.kwt th{font-family:'DM Mono',monospace;font-size:10px;color:var(--gray-400);text-transform:uppercase;letter-spacing:.1em;padding:0 8px 7px;border-bottom:1px solid var(--border);text-align:left;font-weight:500;}
+.kwt td{padding:7px 8px;border-bottom:1px solid var(--gray-100);vertical-align:middle;}
+.kwt tr:last-child td{border-bottom:none;}
+.kwt tr:hover td{background:var(--gray-100);}
+.kq{max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;}
+.pbadge{display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:18px;border-radius:3px;padding:0 4px;font-family:'DM Mono',monospace;font-size:10px;font-weight:500;}
+.pt3{background:#f0fdf4;color:var(--success);}
+.pt10{background:#eff6ff;color:var(--blue);}
+.pt20{background:#fff0ef;color:var(--red);}
+.prs{background:var(--gray-100);color:var(--gray-600);}
+.chip{font-family:'DM Mono',monospace;font-size:10px;padding:2px 5px;border-radius:3px;display:inline-block;white-space:nowrap;}
+.chu{background:#f0fdf4;color:var(--success);}
+.chd{background:#fff0ef;color:var(--red);}
+.chn{background:#eff6ff;color:var(--blue);}
+.chs{background:var(--gray-100);color:var(--gray-400);}
+.snip{display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-bottom:1px solid var(--gray-100);font-size:12px;}
+.snip:last-child{border-bottom:none;}
+.st{font-family:'DM Mono',monospace;font-size:10px;padding:2px 6px;border-radius:3px;flex-shrink:0;background:#fff0ef;color:var(--red);border:1px solid var(--red-mid);margin-top:1px;}
+.st.opp{background:#eff6ff;color:var(--blue);border-color:#bfdbfe;}
+.sbody{flex:1;}
+.sq{color:var(--black);line-height:1.4;}
+.sm{font-size:10px;color:var(--gray-400);font-family:'DM Mono',monospace;margin-top:2px;}
+.sai{background:#eff6ff;border:1px solid #bfdbfe;border-radius:3px;font-size:10px;font-family:'DM Mono',monospace;padding:1px 6px;color:var(--blue);display:inline-block;margin-top:2px;}
+.ctr-r{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:11px;}
+.ctr-l{width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:'DM Mono',monospace;color:var(--gray-600);}
+.ctr-t{flex:1;height:5px;background:var(--gray-100);border-radius:3px;overflow:hidden;}
+.ctr-f{height:100%;border-radius:3px;background:var(--red);}
+.ctr-p{width:32px;text-align:right;font-family:'DM Mono',monospace;color:var(--gray-600);}
+.ai-b{margin-bottom:14px;}
+.ai-n{font-size:12px;font-weight:500;margin-bottom:3px;display:flex;justify-content:space-between;}
+.ai-n span{font-family:'DM Mono',monospace;font-size:11px;color:var(--gray-600);}
+.ai-s{font-size:10px;color:var(--gray-400);font-family:'DM Mono',monospace;margin-bottom:4px;}
+.ai-t{height:6px;background:var(--gray-100);border-radius:3px;overflow:hidden;}
+.ai-f{height:100%;border-radius:3px;background:var(--red);}
+.aibox{background:#eff6ff;border:1px solid #bfdbfe;border-radius:var(--radius-lg);padding:14px 16px;margin-top:10px;}
+.aibox.err{background:#fff0ef;border-color:var(--red-mid);}
+.aibox-t{font-size:11px;font-weight:600;color:var(--blue);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+.aibox.err .aibox-t{color:var(--red);}
+.aibox-c{font-size:12px;color:#1e3a5f;line-height:1.7;}
+.aibox.err .aibox-c{color:var(--red);}
+.spin-row{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--blue);font-family:'DM Mono',monospace;}
+.spinner{width:14px;height:14px;border:2px solid #bfdbfe;border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty{font-size:12px;color:var(--gray-400);font-family:'DM Mono',monospace;padding:20px 0;text-align:center;}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px;}
+.modal{background:var(--white);border-radius:var(--radius-lg);border:1px solid var(--border);box-shadow:var(--shadow-md);padding:22px;width:420px;max-width:100%;max-height:90vh;overflow-y:auto;}
+.mt{font-size:14px;font-weight:600;margin-bottom:4px;}
+.ms{font-size:11px;color:var(--gray-400);font-family:'DM Mono',monospace;margin-bottom:16px;line-height:1.6;}
+.msec{font-size:10px;font-family:'DM Mono',monospace;color:var(--gray-400);text-transform:uppercase;letter-spacing:.1em;margin:14px 0 8px;padding-bottom:4px;border-bottom:1px solid var(--border);}
+.mact{display:flex;gap:8px;margin-top:16px;justify-content:flex-end;}
+.hidden{display:none !important;}
+.mt8{margin-top:8px;}
+
+/* Extra grid */
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:10px;}
+@media(max-width:900px){.g4{grid-template-columns:repeat(2,1fr);}}
+/* GEO platform colors */
+.ga4-src{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:500;}
+.ga4-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+/* GA4 table */
+.ga4t{width:100%;border-collapse:collapse;font-size:12px;}
+.ga4t th{font-family:'DM Mono',monospace;font-size:10px;color:var(--gray-400);text-transform:uppercase;letter-spacing:.1em;padding:0 8px 7px;border-bottom:1px solid var(--border);text-align:left;font-weight:500;}
+.ga4t td{padding:7px 8px;border-bottom:1px solid var(--gray-100);vertical-align:middle;font-family:'DM Mono',monospace;font-size:11px;}
+.ga4t tr:last-child td{border-bottom:none;}
+.ga4t tr:hover td{background:var(--gray-100);}
+/* Purple tag */
+.tp{background:#faf5ff;color:#7c3aed;border-color:#ddd6fe;}
+/* Infobox */
+.infobox{background:var(--gray-100);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;font-size:11px;color:var(--gray-600);font-family:'DM Mono',monospace;line-height:1.7;margin-bottom:10px;}
+.infobox.warn{background:#fefce8;border-color:#fde68a;color:#92400e;}
+.infobox.info{background:#eff6ff;border-color:#bfdbfe;color:#1e40af;}
+/* GEO kpis */
+.geo-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px;}
+@media(max-width:800px){.geo-kpis{grid-template-columns:1fr 1fr;}}
+/* AEO conversational queries */
+.conv-q{font-size:12px;padding:7px 0;border-bottom:1px solid var(--gray-100);display:flex;align-items:flex-start;gap:10px;}
+.conv-q:last-child{border-bottom:none;}
+.conv-q-text{flex:1;color:var(--black);line-height:1.4;}
+.conv-q-meta{display:flex;gap:6px;flex-shrink:0;align-items:center;}
+.conv-badge{font-family:'DM Mono',monospace;font-size:10px;padding:2px 6px;border-radius:3px;}
+.cb-long{background:#faf5ff;color:#7c3aed;}
+.cb-conv{background:#eff6ff;color:var(--blue);}
+.cb-imp{background:#f0fdf4;color:var(--success);}
+/* Recomendaciones */
+.rec-area{margin-bottom:16px;}
+.rec-area-title{font-size:11px;font-family:'DM Mono',monospace;color:var(--gray-400);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+.rec-area-title::after{content:'';flex:1;height:1px;background:var(--border);}
+.rec-item{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin-bottom:8px;font-size:12px;line-height:1.7;color:var(--gray-900);box-shadow:var(--shadow);}
+.rec-item .rec-tag{display:inline-block;font-family:'DM Mono',monospace;font-size:10px;padding:1px 6px;border-radius:3px;margin-right:6px;background:var(--red-light);color:var(--red);border:1px solid var(--red-mid);}
+.rec-item .rec-tag.blue{background:#eff6ff;color:var(--blue);border-color:#bfdbfe;}
+.rec-item .rec-tag.green{background:#f0fdf4;color:var(--success);border-color:#bbf7d0;}
+.rec-summary{background:#eff6ff;border:1px solid #bfdbfe;border-radius:var(--radius-lg);padding:14px 16px;font-size:12px;color:#1e3a5f;line-height:1.7;margin-bottom:16px;}
+.rec-summary-t{font-size:11px;font-weight:600;color:var(--blue);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;}
+/* Print */
+@media print {
+  *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;}
+  body{background:white !important;font-size:11px !important;}
+  .sidebar,.brs,.rtabs,#btn-polaroid{display:none !important;}
+  .main{margin-left:0 !important;}
+  .shell{display:block !important;}
+  .content{padding:0 !important;}
+  .screen{display:block !important;margin-bottom:24px;}
+  #sc-auth{display:none !important;}
+  #pdf-header{display:block !important;}
+  .kpis{grid-template-columns:repeat(4,1fr) !important;gap:6px !important;}
+  .g2,.g3{grid-template-columns:1fr 1fr !important;gap:8px !important;}
+  .geo-kpis{grid-template-columns:repeat(3,1fr) !important;}
+  .panel,.kpi{box-shadow:none !important;border:1px solid #e5e5e3 !important;}
+  .cw{height:160px !important;}
+  .ph{margin-bottom:8px !important;border-top:2px solid #e8352a;padding-top:8px;}
+  .topbar{display:none !important;}
+}
+#pdf-header{display:none;padding:0 0 16px 0;border-bottom:2px solid #e8352a;margin-bottom:20px;}
+#pdf-header .pdf-logo{font-size:18px;font-weight:700;color:#111;}
+#pdf-header .pdf-meta{font-size:11px;color:#888;font-family:'DM Mono',monospace;margin-top:2px;}
+#pdf-header .pdf-stamp{font-size:10px;color:#e8352a;font-family:'DM Mono',monospace;margin-top:6px;font-style:italic;}
+
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <aside class="sidebar">
+    <div class="sidebar-logo" onclick="document.getElementById('logo-inp').click()">
+      <div class="logo-ph" id="logo-ph">B</div>
+      <img class="logo-img hidden" id="logo-img" src="" alt="Logo"/>
+      <div><div class="logo-text" id="ag-nm">Bigbuda</div><div class="logo-sub">SEO · AEO · GEO</div></div>
+      <div class="logo-hint">Subir logo</div>
+    </div>
+    <input type="file" id="logo-inp" accept="image/*" onchange="uploadLogo(this)"/>
+    <div class="s-sec">
+      <div class="s-lbl">Reportes</div>
+      <div class="nav" id="nv-rec" onclick="goSec('rec',this)"><span class="ndot"></span>✦ Recomendaciones</div>
+      <div class="nav on" id="nv-seo" onclick="goSec('seo',this)"><span class="ndot"></span>Dashboard SEO</div>
+      <div class="nav" id="nv-aeo" onclick="goSec('aeo',this)"><span class="ndot"></span>AEO — Google AI</div>
+      <div class="nav" id="nv-camp" onclick="goSec('camp',this)"><span class="ndot"></span>Campañas</div>
+      <div class="nav" id="nv-geo" onclick="goSec('geo',this)"><span class="ndot"></span>AEO · GEO — IAs</div>
+    </div>
+    <div class="s-sec" style="flex:1;display:flex;flex-direction:column;min-height:0">
+      <div class="s-lbl">Clientes
+        <div style="display:flex;align-items:center;gap:4px">
+          <button onclick="openAdd()" title="Agregar" style="background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:18px;line-height:1;padding:0">+</button>
+          <button onclick="exportClients()" title="Exportar" style="background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:13px;padding:0 2px">↑</button>
+          <button onclick="document.getElementById('import-inp').click()" title="Importar" style="background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:13px;padding:0 2px">↓</button>
+          <input type="file" id="import-inp" accept=".json" style="display:none" onchange="importClients(this)"/>
+        </div>
+      </div>
+      <div class="clist" id="clist"></div>
+      <div style="padding:4px 0 6px">
+        <div class="nav hidden" id="nv-in" onclick="doOAuth()" style="padding:6px 8px"><span class="ndot"></span>Iniciar sesión</div>
+        <div class="nav" id="nv-out" onclick="doLogout()" style="padding:6px 8px"><span class="ndot"></span>Desconectar</div>
+      </div>
+    </div>
+    <div class="s-foot">Google Search Console + <span>GA4</span> + <span>Claude AI</span></div>
+  </aside>
+
+  <!-- MODAL AGREGAR CLIENTE -->
+  <div class="overlay hidden" id="mod-add" onclick="if(event.target===this)closeModal('mod-add')">
+    <div class="modal">
+      <div class="mt">Agregar cliente</div>
+      <div class="ms">Selecciona la propiedad directamente desde tu GSC — sin escribir URLs a mano.</div>
+      <div class="fl"><label class="fl-l">Nombre</label><input class="fi" type="text" id="m-nm" placeholder="Ej: Filtrocentro"/></div>
+      <div class="fl"><label class="fl-l">Propiedad GSC</label><select class="fsel" id="m-site"><option>Cargando propiedades…</option></select></div>
+      <div class="fl"><label class="fl-l">GA4 Property ID <span style="color:var(--gray-400)">(opcional)</span></label><input class="fi" type="text" id="m-ga4" placeholder="Ej: 123456789"/></div>
+      <div class="errmsg" id="m-err"></div>
+      <div class="mact"><button class="bg" onclick="closeModal('mod-add')">Cancelar</button><button class="btn bb" style="width:auto" onclick="saveClient()">Guardar</button></div>
+    </div>
+  </div>
+
+  <!-- MODAL GEO -->
+  <div class="overlay hidden" id="mod-geo" onclick="if(event.target===this)closeModal('mod-geo')">
+    <div class="modal">
+      <div class="mt">Visibilidad en IAs</div>
+      <div class="ms" id="geo-ms">Ingresa el % de menciones para cada plataforma (0–100).</div>
+      <div class="msec">% de visibilidad</div>
+      <div id="geo-ed"></div>
+      <div class="mact"><button class="bg" onclick="closeModal('mod-geo')">Cancelar</button><button class="btn bb" style="width:auto" onclick="saveGEO()">Guardar</button></div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="tl"><span class="tc" id="t-ag">Bigbuda</span><span class="tc">›</span><span class="tt" id="t-sec">Dashboard SEO</span></div>
+      <div class="tr">
+        <span class="td" id="t-dt"></span>
+        <div class="pill ok" id="t-pill"><span class="pdot"></span><span id="t-st">Conectado</span></div>
+        <button class="brs" onclick="takePolaroid()" id="btn-polaroid" style="display:none">📷 Tomar una Polaroid</button>
+      </div>
+    </div>
+    <div class="content">
+      <div id="pdf-header"><div class="pdf-logo" id="pdf-logo">Bigbuda</div><div class="pdf-meta" id="pdf-meta"></div><div class="pdf-stamp">📷 Polaroid · Bigbuda · bigbuda.com</div></div>
+
+      <!-- AUTH -->
+      <div class="screen" id="sc-auth">
+        <div class="auth-wrap">
+          <div class="ae">Google Search Console</div>
+          <h1 class="ah">Conectar cuenta</h1>
+          <p class="ap">Autentica con Google para acceder a todas tus propiedades GSC y análisis con Claude AI.</p>
+          <div class="card">
+            <button class="btn bo" onclick="doOAuth()">
+              <svg width="14" height="14" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20H24v8h11.3C33.6 33.1 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.1 8 3l5.7-5.7C34.5 6.5 29.5 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20c11 0 19.7-8 19.7-20 0-1.3-.1-2.7-.4-4z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 16 19 13 24 13c3.1 0 5.9 1.1 8 3l5.7-5.7C34.5 6.5 29.5 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-1.9 13.5-5l-6.2-5.2C29.4 35.6 26.8 36 24 36c-5.1 0-9.5-2.9-11.2-7l-6.5 5C9.8 40 16.4 44 24 44z"/><path fill="#1976D2" d="M43.6 20H24v8h11.3c-.9 2.4-2.5 4.4-4.6 5.8l6.2 5.2C40.9 35.4 44 30.1 44 24c0-1.3-.1-2.7-.4-4z"/></svg>
+              Iniciar con Google OAuth
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- SEO -->
+      <div class="screen on" id="sc-seo">
+        <div class="ph">
+          <div><div class="ph-t" id="seo-t">Dashboard SEO</div><div class="ph-s" id="seo-s">—</div></div>
+          <div class="rtabs"><button class="rtab on" onclick="setRange(14,this)">14d</button><button class="rtab" onclick="setRange(28,this)">28d</button><button class="rtab" onclick="setRange(90,this)">90d</button></div>
+        </div>
+        <div class="kpis">
+          <div class="kpi hi"><div class="kl">Clics totales</div><div class="kv" id="k-cl">—</div><div class="kd" id="k-cl-d"></div></div>
+          <div class="kpi"><div class="kl">Impresiones</div><div class="kv" id="k-im">—</div><div class="kd" id="k-im-d"></div></div>
+          <div class="kpi"><div class="kl">CTR promedio</div><div class="kv" id="k-ct">—</div><div class="kd" id="k-ct-d"></div></div>
+          <div class="kpi"><div class="kl">Posición media</div><div class="kv" id="k-po">—</div><div class="kd" id="k-po-d"></div></div>
+        </div>
+        <div class="g2" style="margin-bottom:10px;">
+          <div class="panel"><div class="ph2"><span class="pt">Clics e impresiones</span><span class="ptag tg">GSC live</span></div><div class="pb2"><div class="cw"><canvas id="ch-tl"></canvas></div></div></div>
+          <div class="panel"><div class="ph2"><span class="pt">Distribución de posiciones</span><span class="ptag tl2">GSC</span></div><div class="pb2"><div class="cw" style="height:180px"><canvas id="ch-pos"></canvas></div></div></div>
+        </div>
+        <div class="g2">
+          <div class="panel"><div class="ph2"><span class="pt">Top keywords</span><span class="ptag tl2">Live</span></div><div class="pb2" style="padding:0 16px 12px"><table class="kwt"><thead><tr><th>Keyword</th><th>Pos.</th><th>Clics</th><th>CTR</th><th>Δ</th></tr></thead><tbody id="kw-body"></tbody></table></div></div>
+          <div class="panel"><div class="ph2"><span class="pt">CTR por query</span><span class="ptag tg">GSC</span></div><div class="pb2"><div id="ctr-body"></div></div></div>
+        </div>
+      </div>
+
+
+      <!-- RECOMENDACIONES -->
+      <div class="screen" id="sc-rec">
+        <div class="ph">
+          <div><div class="ph-t">✦ Recomendaciones</div><div class="ph-s" id="rec-s">Análisis con Claude AI</div></div>
+          <button class="brs" id="rec-btn" onclick="loadRec(true)">✦ Analizar con Claude AI</button>
+        </div>
+        <div id="rec-loading" class="infobox info" style="display:none"><div class="spin-row"><span class="spinner"></span><span id="rec-loading-txt">Analizando…</span></div></div>
+        <div id="rec-error" class="infobox warn" style="display:none"></div>
+        <div id="rec-empty" class="infobox">Selecciona un cliente y haz clic en "Analizar con Claude AI".</div>
+        <div id="rec-content" style="display:none">
+          <div class="rec-summary" id="rec-summary-box" style="display:none"><div class="rec-summary-t">✦ Resumen ejecutivo</div><div id="rec-summary-txt"></div></div>
+          <div class="rec-area"><div class="rec-area-title">SEO</div><div id="rec-seo-items"></div></div>
+          <div class="rec-area"><div class="rec-area-title">AEO · Posicionamiento en IAs</div><div id="rec-aeo-items"></div></div>
+          <div class="rec-area"><div class="rec-area-title">Campañas</div><div id="rec-camp-items"></div></div>
+        </div>
+      </div>
+
+      <!-- AEO -->
+      <div class="screen" id="sc-aeo">
+        <div class="ph">
+          <div><div class="ph-t">AEO — Google AI</div><div class="ph-s" id="aeo-s">Queries conversacionales</div></div>
+          <div class="rtabs"><button class="rtab on" onclick="setRange(14,this);loadAEO()">14d</button><button class="rtab" onclick="setRange(28,this);loadAEO()">28d</button><button class="rtab" onclick="setRange(90,this);loadAEO()">90d</button></div>
+        </div>
+        <div class="panel">
+          <div class="ph2"><span class="pt">Queries conversacionales (proxy AI Overviews)</span><span class="ptag ta">Heurística GSC</span></div>
+          <div class="pb2" style="padding:0 16px 14px">
+            <div class="infobox" style="margin-bottom:10px;margin-top:8px">Queries de 5+ palabras o con intención informacional — los que con mayor frecuencia disparan AI Overviews.</div>
+            <div id="aeo-conv-body"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CAMPAÑAS -->
+      <div class="screen" id="sc-camp">
+        <div class="ph">
+          <div><div class="ph-t">Campañas</div><div class="ph-s" id="camp-s">Resultados desde GA4</div></div>
+          <div class="rtabs"><button class="rtab on" onclick="setRange(14,this);loadCamp()">14d</button><button class="rtab" onclick="setRange(28,this);loadCamp()">28d</button><button class="rtab" onclick="setRange(90,this);loadCamp()">90d</button></div>
+        </div>
+        <div id="camp-no-ga4" class="infobox warn" style="display:none">⚠ Este cliente no tiene GA4 configurado.</div>
+        <div id="camp-loading" class="infobox info" style="display:none"><div class="spin-row"><span class="spinner"></span>Cargando campañas…</div></div>
+        <div id="camp-error" class="infobox warn" style="display:none"></div>
+        <div class="kpis" id="camp-kpis" style="display:none">
+          <div class="kpi hi"><div class="kl">Sesiones pagas</div><div class="kv" id="camp-k-sess">—</div><div class="kd" id="camp-k-sess-d"></div></div>
+          <div class="kpi"><div class="kl">Conversiones</div><div class="kv" id="camp-k-conv">—</div><div class="kd" id="camp-k-conv-d"></div></div>
+          <div class="kpi"><div class="kl">Costo / conversión</div><div class="kv" id="camp-k-cpc">—</div><div class="kd"></div></div>
+          <div class="kpi"><div class="kl">T. sesión promedio</div><div class="kv" id="camp-k-dur">—</div><div class="kd"></div></div>
+        </div>
+        <div class="g2" id="camp-main" style="display:none;margin-top:10px">
+          <div class="panel"><div class="ph2"><span class="pt">Resultados por campaña</span><span class="ptag tp">GA4 · Ads</span></div><div class="pb2" style="padding:0 16px 12px"><table class="ga4t"><thead><tr><th>Campaña</th><th>Sesiones</th><th>Conversiones</th><th>Costo/conv.</th><th>T. sesión</th></tr></thead><tbody id="camp-tbody"></tbody></table></div></div>
+          <div class="panel"><div class="ph2"><span class="pt">Sesiones vs conversiones</span><span class="ptag tp">GA4</span></div><div class="pb2"><div class="cw"><canvas id="ch-camp"></canvas></div></div></div>
+        </div>
+        <div class="panel" id="camp-tl-panel" style="display:none;margin-top:10px">
+          <div class="ph2"><span class="pt">Tendencia diaria</span><span class="ptag tp">GA4</span></div>
+          <div class="pb2"><div class="cw"><canvas id="ch-camp-tl"></canvas></div></div>
+        </div>
+      </div>
+
+      <!-- AEO·GEO -->
+      <div class="screen" id="sc-geo">
+        <div class="ph">
+          <div><div class="ph-t">AEO · GEO</div><div class="ph-s" id="geo-s">Visibilidad y tráfico desde IAs</div></div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <button class="brs" id="geo-ga4-btn" onclick="loadGA4GEO()" style="display:none">↺ Actualizar</button>
+            <div class="rtabs"><button class="rtab on" onclick="setRangeGeo(14,this)">14d</button><button class="rtab" onclick="setRangeGeo(28,this)">28d</button><button class="rtab" onclick="setRangeGeo(90,this)">90d</button></div>
+          </div>
+        </div>
+        <div class="geo-kpis" id="geo-kpis" style="display:none">
+          <div class="kpi"><div class="kl">Sesiones desde IAs</div><div class="kv" id="geo-k-sess">—</div><div class="kd" id="geo-k-sess-d"></div></div>
+          <div class="kpi hi"><div class="kl">Usuarios desde IAs</div><div class="kv" id="geo-k-usr">—</div><div class="kd" id="geo-k-usr-d"></div></div>
+          <div class="kpi"><div class="kl">Conversiones IA</div><div class="kv" id="geo-k-conv">—</div><div class="kd" id="geo-k-conv-d"></div></div>
+        </div>
+        <div class="g2" id="geo-ga4-section" style="display:none">
+          <div class="panel"><div class="ph2"><span class="pt">Tráfico referido por IA</span><span class="ptag tp">GA4 live</span></div><div class="pb2" style="padding:0 16px 12px"><table class="ga4t"><thead><tr><th>Fuente IA</th><th>Sesiones</th><th>Usuarios</th><th>Conversiones</th><th>T. sesión</th></tr></thead><tbody id="geo-ga4-body"></tbody></table></div></div>
+          <div class="panel"><div class="ph2"><span class="pt">Sesiones por fuente IA</span><span class="ptag tp">GA4</span></div><div class="pb2"><div class="cw"><canvas id="ch-geo-traffic"></canvas></div></div></div>
+        </div>
+        <div id="geo-no-ga4" class="infobox warn" style="display:none">⚠ Sin GA4 configurado — agrega el Property ID al editar este cliente.</div>
+        <div id="geo-ga4-loading" style="display:none" class="infobox info"><div class="spin-row"><span class="spinner"></span>Cargando datos GA4…</div></div>
+        <div id="geo-ga4-error" class="infobox warn" style="display:none"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const CID='971004179651-mnrj4pj6k2gjdve67ffsess1octaa38t.apps.googleusercontent.com';
+const REDIR='https://paulete-bb.github.io/seo-dashboard';
+const SCOPE='https://www.googleapis.com/auth/webmasters.readonly https://www.googleapis.com/auth/analytics.readonly';
+const S={token:null,url:null,name:'',id:null,days:14,charts:{},kws:[]};
+const ls={g:k=>{try{return JSON.parse(localStorage.getItem(k));}catch(e){return null;}},s:(k,v)=>localStorage.setItem(k,JSON.stringify(v))};
+const clients=()=>ls.g('bb_cl')||[];
+const cd=(id,k)=>ls.g(`bb_${k}_${id}`);
+const scd=(id,k,v)=>ls.s(`bb_${k}_${id}`,v);
+
+// INIT
+document.getElementById('t-dt').textContent=new Date().toLocaleDateString('es-CL',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+renderCL();
+if(location.hash.includes('access_token')){
+  const h=new URLSearchParams(location.hash.slice(1));
+  const t=h.get('access_token');
+  history.replaceState(null,'',location.pathname);
+  if(t){S.token=t;sessionStorage.setItem('bb_t',t);afterToken();}
+}else{
+  const t=sessionStorage.getItem('bb_t');
+  if(t){S.token=t;afterToken();}
+  else showAuth();
+}
+
+async function afterToken(){
+  setConn(true);
+  const pending=sessionStorage.getItem('bb_pend');
+  if(pending){sessionStorage.removeItem('bb_pend');const c=clients().find(x=>x.id===pending);if(c){pickClient(c.id);return;}}
+  const last=sessionStorage.getItem('bb_last');
+  if(last){const c=clients().find(x=>x.id===last);if(c){pickClient(c.id);return;}}
+  const list=clients();
+  if(list.length===1){pickClient(list[0].id);return;}
+  showSc('sc-seo');
+}
+
+function uploadLogo(i){const f=i.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{document.getElementById('logo-img').src=e.target.result;document.getElementById('logo-img').classList.remove('hidden');document.getElementById('logo-ph').classList.add('hidden');};r.readAsDataURL(f);}
+
+function goSec(n,el){
+  document.querySelectorAll('.nav').forEach(x=>x.classList.remove('on'));
+  if(el)el.classList.add('on');
+  const t={seo:'Dashboard SEO',aeo:'AEO — Snippets',geo:'GEO — IAs'};
+  document.getElementById('t-sec').textContent=t[n]||n;
+  if(!S.token){showAuth();return;}
+  if(!S.url){alert('Selecciona un cliente del sidebar.');return;}
+  showSc('sc-'+n);
+  if(n==='aeo')renderAEO();
+  if(n==='geo')renderGEO();
+}
+
+function showSc(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));document.getElementById(id)?.classList.add('on');}
+function showAuth(){setConn(false);showSc('sc-auth');}
+
+function renderCL(){
+  const list=clients(),el=document.getElementById('clist');
+  if(!list.length){el.innerHTML=`<div style="padding:8px 16px;font-size:11px;color:var(--gray-400);font-family:'DM Mono',monospace">Sin clientes.<br>Usa + para agregar.</div>`;return;}
+  el.innerHTML=list.map(c=>`<div class="ci ${S.id===c.id?'active':''}" onclick="pickClient('${c.id}')"><div class="ci-av">${c.name[0].toUpperCase()}</div><div class="ci-info"><div class="ci-nm">${c.name}</div><div class="ci-url">${c.url.replace(/https?:\/\//,'').replace(/\/$/,'')}</div></div><button class="ci-del" onclick="delC(event,'${c.id}')">×</button></div>`).join('');
+}
+
+async function openAdd(){
+  if(!S.token){doOAuth();return;}
+  document.getElementById('m-err').classList.remove('on');
+  document.getElementById('m-nm').value='';
+  const sel=document.getElementById('m-site');
+  sel.innerHTML='<option>Cargando propiedades…</option>';
+  document.getElementById('mod-add').classList.remove('hidden');
+  try{
+    const res=await fetch('https://www.googleapis.com/webmasters/v3/sites',{headers:{Authorization:`Bearer ${S.token}`}});
+    const data=await res.json();
+    const sites=(data.siteEntry||[]).sort((a,b)=>a.siteUrl.localeCompare(b.siteUrl));
+    sel.innerHTML=sites.length
+      ? sites.map(s=>`<option value="${s.siteUrl}">${s.siteUrl}</option>`).join('')
+      : '<option value="">Sin propiedades encontradas</option>';
+  }catch(e){sel.innerHTML='<option value="">Error al cargar — reintenta</option>';}
+}
+
+function closeModal(id){document.getElementById(id).classList.add('hidden');}
+
+function saveClient(){
+  const nm=document.getElementById('m-nm').value.trim(),url=document.getElementById('m-site').value;
+  if(!nm||!url){const e=document.getElementById('m-err');e.textContent='⚠ Completa nombre y selecciona propiedad.';e.classList.add('on');return;}
+  const list=clients();list.push({id:Date.now().toString(),name:nm,url});ls.s('bb_cl',list);closeModal('mod-add');renderCL();
+}
+
+function delC(e,id){e.stopPropagation();if(!confirm('¿Eliminar cliente?'))return;ls.s('bb_cl',clients().filter(c=>c.id!==id));if(S.id===id){S.id=null;S.url=null;S.name='';}renderCL();}
+
+function pickClient(id){
+  const c=clients().find(x=>x.id===id);if(!c)return;
+  if(!S.token){sessionStorage.setItem('bb_pend',id);doOAuth();return;}
+  S.id=c.id;S.url=c.url;S.name=c.name;
+  sessionStorage.setItem('bb_last',id);
+  renderCL();enterDash();
+}
+
+function doOAuth(){const st=Math.random().toString(36).slice(2);sessionStorage.setItem('bb_os',st);const p=new URLSearchParams({client_id:CID,redirect_uri:REDIR,response_type:'token',scope:SCOPE,state:st});location.href='https://accounts.google.com/o/oauth2/v2/auth?'+p;}
+
+function doLogout(){S.token=null;S.url=null;S.name='';S.id=null;sessionStorage.removeItem('bb_t');sessionStorage.removeItem('bb_last');destroyC();setConn(false);renderCL();showAuth();}
+
+function setConn(ok){
+  const p=document.getElementById('t-pill');p.className='pill'+(ok?' ok':'');
+  document.getElementById('t-st').textContent=ok?'Conectado':'Sin conectar';
+  document.getElementById('nv-in').classList.toggle('hidden',ok);
+  document.getElementById('nv-out').classList.toggle('hidden',!ok);
+}
+
+function enterDash(){
+  document.getElementById('t-ag').textContent=S.name||'Cliente';
+  document.getElementById('ag-nm').textContent=S.name||'Bigbuda';
+  document.getElementById('logo-ph').textContent=(S.name||'B')[0].toUpperCase();
+  document.querySelectorAll('.nav').forEach(n=>n.classList.remove('on'));
+  document.getElementById('nv-seo').classList.add('on');
+  document.getElementById('t-sec').textContent='Dashboard SEO';
+  showSc('sc-seo');loadSEO();
+}
+
+function setRange(d,btn){S.days=d;document.querySelectorAll('.rtab').forEach(b=>b.classList.remove('on'));btn.classList.add('on');loadSEO();}
+
+// API
+async function gscQ(body){
+  const r=await fetch(`https://www.googleapis.com/webmasters/v3/sites/${encodeURIComponent(S.url)}/searchAnalytics/query`,{method:'POST',headers:{Authorization:`Bearer ${S.token}`,'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(!r.ok){const e=await r.json();throw new Error(e.error?.message||`GSC ${r.status}`);}
+  return r.json();
+}
+function ago(n){const d=new Date();d.setDate(d.getDate()-n);return d.toISOString().slice(0,10);}
+function fN(n){return n==null?'—':n>=1e6?(n/1e6).toFixed(1)+'M':n>=1000?(n/1000).toFixed(1)+'K':Math.round(n).toLocaleString('es-CL');}
+function fP(n){return n!=null?(n*100).toFixed(1)+'%':'—';}
+function fSec(s){if(!s||s===0)return'—';const m=Math.floor(s/60);const sec=Math.round(s%60);return m>0?`${m}m ${sec}s`:`${sec}s`;}
+function dlt(c,p,low){if(c==null||!p)return'';const d=((c-p)/Math.abs(p))*100,a=Math.abs(d).toFixed(1)+'%',g=low?d<0:d>0;return`<span class="${g?'up':'dn'}">${d>0?'▲':'▼'} ${a} vs per. ant.</span>`;}
+
+// LOAD SEO
+async function loadSEO(){
+  if(!S.token||!S.url)return;
+  ['k-cl','k-im','k-ct','k-po'].forEach(i=>{document.getElementById(i).textContent='···';document.getElementById(i+'-d').innerHTML='';});
+  document.getElementById('seo-t').textContent=S.name;
+  document.getElementById('seo-s').textContent=`${S.url.replace(/https?:\/\//,'').replace(/\/$/,'')} · últimos ${S.days} días`;
+  destroyC();S.kws=[];
+  try{await Promise.all([loadSum(),loadTL(),loadKW()]);renderMini();}
+  catch(e){console.error('SEO:',e.message);}
+}
+
+async function loadSum(){
+  const[c,p]=await Promise.all([gscQ({startDate:ago(S.days+3),endDate:ago(3),rowLimit:1}),gscQ({startDate:ago(S.days*2+3),endDate:ago(S.days+3),rowLimit:1})]);
+  const r=c.rows?.[0]||{},q=p.rows?.[0]||{};
+  document.getElementById('k-cl').textContent=fN(r.clicks);document.getElementById('k-cl-d').innerHTML=dlt(r.clicks,q.clicks,false);
+  document.getElementById('k-im').textContent=fN(r.impressions);document.getElementById('k-im-d').innerHTML=dlt(r.impressions,q.impressions,false);
+  document.getElementById('k-ct').textContent=fP(r.ctr);document.getElementById('k-ct-d').innerHTML=dlt(r.ctr,q.ctr,false);
+  document.getElementById('k-po').textContent=r.position?.toFixed(1)||'—';document.getElementById('k-po-d').innerHTML=dlt(r.position,q.position,true);
+}
+
+async function loadTL(){
+  const d=await gscQ({startDate:ago(S.days+3),endDate:ago(3),dimensions:['date'],rowLimit:100});
+  const rows=(d.rows||[]).sort((a,b)=>a.keys[0].localeCompare(b.keys[0]));
+  if(S.charts.tl)try{S.charts.tl.destroy();}catch(e){}
+  S.charts.tl=new Chart(document.getElementById('ch-tl').getContext('2d'),{type:'line',data:{labels:rows.map(r=>r.keys[0].slice(5)),datasets:[{label:'Clics',data:rows.map(r=>r.clicks),borderColor:'#e8352a',backgroundColor:'rgba(232,53,42,0.06)',tension:.4,fill:true,pointRadius:0,borderWidth:2,yAxisID:'y'},{label:'Imp.',data:rows.map(r=>r.impressions),borderColor:'#bbb',backgroundColor:'rgba(0,0,0,0.02)',tension:.4,fill:true,pointRadius:0,borderWidth:1.5,borderDash:[4,3],yAxisID:'y1'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#888',font:{size:10},maxTicksLimit:8},grid:{color:'#f0f0ee'}},y:{display:false},y1:{display:false}}}});
+}
+
+async function loadKW(){
+  const[c,p]=await Promise.all([gscQ({startDate:ago(S.days+3),endDate:ago(3),dimensions:['query'],rowLimit:25}),gscQ({startDate:ago(S.days*2+3),endDate:ago(S.days+3),dimensions:['query'],rowLimit:50})]);
+  const prev={};(p.rows||[]).forEach(r=>{prev[r.keys[0]]=r;});
+  S.kws=c.rows||[];
+  const tb=document.getElementById('kw-body'),cb=document.getElementById('ctr-body');
+  tb.innerHTML='';cb.innerHTML='';
+  S.kws.slice(0,10).forEach(r=>{
+    const q=r.keys[0],pos=r.position,pr=prev[q];
+    const pc=pos<=3?'pt3':pos<=10?'pt10':pos<=20?'pt20':'prs';
+    let ch;if(!pr)ch=`<span class="chip chn">nuevo</span>`;else{const d=Math.round(pr.position-pos);if(d>0)ch=`<span class="chip chu">▲${d}</span>`;else if(d<0)ch=`<span class="chip chd">▼${Math.abs(d)}</span>`;else ch=`<span class="chip chs">—</span>`;}
+    tb.innerHTML+=`<tr><td class="kq" title="${q}">${q}</td><td><span class="pbadge ${pc}">${pos.toFixed(1)}</span></td><td>${fN(r.clicks)}</td><td>${fP(r.ctr)}</td><td>${ch}</td></tr>`;
+    cb.innerHTML+=`<div class="ctr-r"><span class="ctr-l">${q}</span><div class="ctr-t"><div class="ctr-f" style="width:${Math.min(100,r.ctr*100*5)}%"></div></div><span class="ctr-p">${fP(r.ctr)}</span></div>`;
+  });
+  const b=[0,0,0,0,0];S.kws.forEach(r=>{const p=r.position;if(p<=3)b[0]++;else if(p<=10)b[1]++;else if(p<=20)b[2]++;else if(p<=50)b[3]++;else b[4]++;});
+  if(S.charts.pos)try{S.charts.pos.destroy();}catch(e){}
+  S.charts.pos=new Chart(document.getElementById('ch-pos').getContext('2d'),{type:'doughnut',data:{labels:['Top 3','Top 10','Top 20','Top 50','50+'],datasets:[{data:b,backgroundColor:['#16a34a','#3b82f6','#e8352a','#f59e0b','#ddd'],borderColor:'#fff',borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,cutout:'70%',plugins:{legend:{position:'bottom',labels:{color:'#555',font:{size:10},padding:8,boxWidth:8}}}}});
+}
+
+// AEO
+function renderMini(){
+  const snips=cd(S.id,'snips')||[];
+  document.getElementById('snip-mini').innerHTML=snips.length
+    ? snips.slice(0,4).map(s=>`<div class="snip"><span class="st ${s.status==='oportunidad'?'opp':''}">${s.type}</span><div class="sbody"><div class="sq">${s.query}</div><div class="sm">${s.status==='oportunidad'?'Oportunidad IA':'Ganado'} ${s.status==='oportunidad'?'<span class="sai">IA</span>':''}</div></div></div>`).join('')
+    : '<div class="empty">Ve a "AEO — Snippets" y analiza con Claude AI.</div>';
+}
+
+function renderAEO(){
+  document.getElementById('aeo-s').textContent=`Análisis para ${S.name}`;
+  const snips=cd(S.id,'snips')||[];
+  const won=snips.filter(s=>s.status==='ganado');
+  const opps=snips.filter(s=>s.status==='oportunidad');
+  document.getElementById('aeo-won').innerHTML=won.length
+    ? won.map(s=>`<div class="snip"><span class="st">${s.type}</span><div class="sbody"><div class="sq">${s.query}</div><div class="sm">Ganado</div></div></div>`).join('')
+    : '<div class="empty">Sin snippets ganados registrados.</div>';
+  document.getElementById('aeo-opps').innerHTML=opps.length
+    ? opps.map(s=>`<div class="snip"><span class="st opp">${s.type}</span><div class="sbody"><div class="sq">${s.query}</div><div class="sm">Pos. ${s.pos?.toFixed(1)||'?'} · ${fP(s.ctr)} CTR <span class="sai">Claude AI</span></div><div class="sm" style="color:var(--gray-600);margin-top:3px">${s.razon||''}</div></div></div>`).join('')
+    : '<div class="empty">Haz clic en "Analizar con Claude AI" para detectar oportunidades.</div>';
+}
+
+async function runAEO(){
+  if(!S.token||!S.url){alert('Selecciona un cliente primero.');return;}
+  if(!S.kws.length){
+    try{const d=await gscQ({startDate:ago(S.days+3),endDate:ago(3),dimensions:['query'],rowLimit:25});S.kws=d.rows||[];}
+    catch(e){alert('Error cargando keywords: '+e.message);return;}
+  }
+  document.getElementById('aeo-aibox').innerHTML=`<div class="aibox"><div class="aibox-t">✦ Claude AI</div><div class="spin-row"><span class="spinner"></span>Analizando ${S.kws.length} keywords reales de ${S.name}…</div></div>`;
+  const kwList=S.kws.slice(0,20).map(r=>`- "${r.keys[0]}" | pos ${r.position.toFixed(1)} | CTR ${fP(r.ctr)} | clics ${fN(r.clicks)}`).join('\n');
+  try{
+    const res=await fetch('https://claude-proxy.paulete.workers.dev',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      model:'claude-sonnet-4-20250514',max_tokens:1000,
+      system:`Eres experto en SEO y AEO. Analiza keywords reales de GSC e identifica oportunidades de featured snippets. Responde solo en JSON válido, sin texto extra. El sitio es: ${S.url}`,
+      messages:[{role:'user',content:`Analiza estas keywords reales de GSC para "${S.name}" (${S.url}):
+${kwList}
+
+Devuelve SOLO este JSON (sin markdown):
+{"oportunidades":[{"query":"texto","tipo":"Párrafo|Lista|Tabla|PAA","razon":"motivo concreto","posicion":número}],"resumen":"análisis 2-3 líneas del potencial AEO"}`}]
+    })});
     const data=await res.json();
     const txt=data.content?.[0]?.text||'';
     let parsed;
     try{parsed=JSON.parse(txt.replace(/```json|```/g,'').trim());}
-    catch(e){throw new Error('No se pudo parsear la respuesta. Intenta de nuevo.');}
-
-    // Render summary
-    if(parsed.resumen){
-      document.getElementById('rec-summary-txt').textContent=parsed.resumen;
-      document.getElementById('rec-summary-box').style.display='block';
-    }
-
-    const prioColor={'alta':'','media':'blue','baja':'green'};
-    const renderItems=(items,containerId)=>{
-      const el=document.getElementById(containerId);
-      if(!items?.length){el.innerHTML='<div class="rec-item" style="color:var(--gray-400)">Sin recomendaciones para esta área.</div>';return;}
-      el.innerHTML=items.map(item=>`
-        <div class="rec-item">
-          <span class="rec-tag ${prioColor[item.prioridad]||''}">${item.prioridad?.toUpperCase()||'INFO'}</span>
-          <strong>${item.titulo}</strong><br>
-          ${item.recomendacion}
-        </div>`).join('');
-    };
-    renderItems(parsed.seo,'rec-seo-items');
-    renderItems(parsed.aeo,'rec-aeo-items');
-    renderItems(parsed.campanas,'rec-camp-items');
-
-    document.getElementById('rec-loading').style.display='none';
-    document.getElementById('rec-content').style.display='block';
+    catch(e){throw new Error('No se pudo parsear respuesta de Claude. Intenta de nuevo.');}
+    const existing=(cd(S.id,'snips')||[]).filter(s=>s.status==='ganado');
+    const newOpps=(parsed.oportunidades||[]).map(o=>({query:o.query,type:o.tipo,status:'oportunidad',pos:o.posicion,razon:o.razon,ctr:S.kws.find(k=>k.keys[0]===o.query)?.ctr}));
+    scd(S.id,'snips',[...existing,...newOpps]);
+    document.getElementById('aeo-aibox').innerHTML=`<div class="aibox"><div class="aibox-t">✦ Claude AI — análisis completado</div><div class="aibox-c">${parsed.resumen||''}</div></div>`;
+    renderAEO();renderMini();
   }catch(e){
-    document.getElementById('rec-loading').style.display='none';
-    const errEl=document.getElementById('rec-error');
-    errEl.textContent=`⚠ ${e.message}`;
-    errEl.style.display='block';
+    document.getElementById('aeo-aibox').innerHTML=`<div class="aibox err"><div class="aibox-t">⚠ Error</div><div class="aibox-c">${e.message}</div></div>`;
   }
-  document.getElementById('rec-btn').disabled=false;
 }
 
+// GEO
+const getGeo=()=>cd(S.id,'geo')||PLATS.map(n=>({name:n,prev:0,curr:0}));
+
+function renderGEO(){
+  document.getElementById('geo-s').textContent=`Visibilidad de ${S.name} en IAs`;
+  const data=getGeo();
+  document.getElementById('geo-body').innerHTML=data.map(p=>`<div class="ai-b"><div class="ai-n">${p.name}<span>${p.curr}%</span></div><div class="ai-s">${p.prev>0||p.curr>0?`Inicio: ${p.prev}% → Hoy: ${p.curr}%`:'Sin datos. Haz clic en "Editar datos".'}</div><div class="ai-t"><div class="ai-f" style="width:${p.curr}%"></div></div></div>`).join('');
+  if(S.charts.geo)try{S.charts.geo.destroy();}catch(e){}
+  S.charts.geo=new Chart(document.getElementById('ch-geo').getContext('2d'),{type:'bar',data:{labels:data.map(p=>p.name.split('/')[0].trim()),datasets:[{label:'Inicio',data:data.map(p=>p.prev),backgroundColor:'#f0f0ee',borderRadius:4},{label:'Hoy',data:data.map(p=>p.curr),backgroundColor:'#e8352a',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#555',font:{size:10},boxWidth:8}}},scales:{x:{ticks:{color:'#888',font:{size:10}},grid:{color:'#f0f0ee'}},y:{min:0,max:100,ticks:{color:'#888',font:{size:10},callback:v=>v+'%'},grid:{color:'#f0f0ee'}}}}});
+}
+
+function openGEO(){
+  if(!S.id){alert('Selecciona un cliente primero.');return;}
+  document.getElementById('geo-ms').textContent=`Cliente: ${S.name}`;
+  const data=getGeo();
+  document.getElementById('geo-ed').innerHTML=data.map((p,i)=>`<div style="margin-bottom:14px"><div style="font-size:11px;font-weight:500;margin-bottom:6px">${p.name}</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><label class="fl-l">% Inicio</label><input class="fi" type="number" min="0" max="100" id="gp_${i}" value="${p.prev}"/></div><div><label class="fl-l">% Hoy</label><input class="fi" type="number" min="0" max="100" id="gc_${i}" value="${p.curr}"/></div></div></div>`).join('');
+  document.getElementById('mod-geo').classList.remove('hidden');
+}
+
+function saveGEO(){
+  scd(S.id,'geo',PLATS.map((n,i)=>({name:n,prev:parseInt(document.getElementById(`gp_${i}`)?.value)||0,curr:parseInt(document.getElementById(`gc_${i}`)?.value)||0})));
+  closeModal('mod-geo');renderGEO();
+}
 </script>
 </body>
 </html>
