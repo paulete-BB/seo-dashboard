@@ -789,7 +789,19 @@ Genera 3-4 recomendaciones por área. Sé específico con los datos reales, no g
     const res=await fetch('https://claude-proxy.paulete.workers.dev',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:2000,system:'Eres consultor experto en SEO, AEO y Google Ads. Responde siempre en español con recomendaciones específicas y accionables.',messages:[{role:'user',content:prompt}]})});
     const data=await res.json();
     const txt=data.content?.[0]?.text||'';
-    let parsed;try{parsed=JSON.parse(txt.replace(/```json|```/g,'').trim());}catch(e){throw new Error('No se pudo parsear la respuesta. Intenta de nuevo.');}
+    let parsed;
+    try{
+      // Strip markdown fences and find the JSON object
+      let clean=txt.replace(/```json|```/g,'').trim();
+      // Extract first { ... } block in case there's text before/after
+      const match=clean.match(/\{[\s\S]*\}/);
+      if(!match)throw new Error('sin JSON');
+      parsed=JSON.parse(match[0]);
+    }catch(e){
+      // Log raw response to help debug
+      console.error('Raw Claude response:', txt);
+      throw new Error('No se pudo parsear la respuesta. Intenta de nuevo.');
+    }
     if(parsed.resumen){document.getElementById('rec-summary-txt').textContent=parsed.resumen;document.getElementById('rec-summary-box').style.display='block';}
     const prioColor={'alta':'','media':'blue','baja':'green'};
     const renderItems=(items,containerId)=>{const el=document.getElementById(containerId);if(!items?.length){el.innerHTML='<div class="rec-item" style="color:var(--gray-400)">Sin recomendaciones para esta área.</div>';return;}el.innerHTML=items.map(item=>`<div class="rec-item"><span class="rec-tag ${prioColor[item.prioridad]||''}">${(item.prioridad||'info').toUpperCase()}</span><strong>${item.titulo}</strong><br>${item.recomendacion}</div>`).join('');};
