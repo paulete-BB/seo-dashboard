@@ -786,7 +786,7 @@ Responde SOLO en JSON válido sin markdown:
 {"resumen":"2-3 oraciones del estado general","seo":[{"prioridad":"alta|media|baja","titulo":"título","recomendacion":"acción concreta"}],"aeo":[{"prioridad":"alta|media|baja","titulo":"título","recomendacion":"acción concreta"}],"campanas":[{"prioridad":"alta|media|baja","titulo":"título","recomendacion":"acción concreta"}]}
 Genera 3-4 recomendaciones por área. Sé específico con los datos reales, no genérico.`;
   try{
-    const res=await fetch('https://claude-proxy.paulete.workers.dev',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:2000,system:'Eres consultor experto en SEO, AEO y Google Ads. Responde siempre en español con recomendaciones específicas y accionables.',messages:[{role:'user',content:prompt}]})});
+    const res=await fetch('https://claude-proxy.paulete.workers.dev',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:2000,system:'Eres consultor experto en SEO, AEO y Google Ads. Responde siempre en español con recomendaciones específicas y accionables.',messages:[{role:'user',content:prompt}]})});
     const data=await res.json();
     const txt=data.content?.[0]?.text||'';
     let parsed;
