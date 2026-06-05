@@ -6,7 +6,182 @@
 <title>SEO · AEO · GEO Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js">
+// ─── META ADS ─────────────────────────────────────────────────────────────────
+let S_meta = { days: 14 };
+
+function setRangeMeta(d, btn){
+  S_meta.days = d;
+  document.querySelectorAll('#sc-meta .rtab').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  loadMeta();
+}
+
+async function metaFetch(endpoint, params={}){
+  const res = await fetch('https://claude-proxy.paulete.workers.dev', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ service:'meta', endpoint, params })
+  });
+  if(!res.ok) throw new Error(`Worker ${res.status}`);
+  const data = await res.json();
+  if(data.error) throw new Error(data.error.message || JSON.stringify(data.error));
+  return data;
+}
+
+function metaDateRange(days){
+  const end = new Date(); end.setDate(end.getDate()-1);
+  const start = new Date(); start.setDate(start.getDate()-days-1);
+  const fmt = d => d.toISOString().slice(0,10);
+  return { since: fmt(start), until: fmt(end) };
+}
+
+async function loadMeta(){
+  if(!S.token||!S.id) return;
+  const client = clients().find(x=>x.id===S.id);
+  if(!client?.meta){
+    document.getElementById('meta-no-acc').style.display='block';
+    ['meta-loading','meta-error','meta-kpis','meta-kpis2','meta-main'].forEach(id=>document.getElementById(id).style.display='none');
+    return;
+  }
+  const accId = client.meta;
+  document.getElementById('meta-s').textContent = `${S.name} · últimos ${S_meta.days} días`;
+  document.getElementById('meta-no-acc').style.display='none';
+  document.getElementById('meta-error').style.display='none';
+  document.getElementById('meta-kpis').style.display='none';
+  document.getElementById('meta-kpis2').style.display='none';
+  document.getElementById('meta-main').style.display='none';
+  document.getElementById('meta-loading').style.display='block';
+  if(S.charts.metaTl)try{S.charts.metaTl.destroy();}catch(e){}
+
+  const curr = metaDateRange(S_meta.days);
+  const prev = metaDateRange(S_meta.days * 2);
+  const prevEnd = new Date(); prevEnd.setDate(prevEnd.getDate()-S_meta.days-1);
+  const prevStart = new Date(); prevStart.setDate(prevStart.getDate()-S_meta.days*2-1);
+  const fmt = d => d.toISOString().slice(0,10);
+  const prevRange = { since: fmt(prevStart), until: fmt(prevEnd) };
+
+  const fields = 'spend,impressions,clicks,ctr,cpc,cpm,reach,actions';
+  const timeRange = (r) => JSON.stringify({ since: r.since, until: r.until });
+
+  try{
+    const [summary, summaryPrev, campaigns, daily] = await Promise.all([
+      // Current period summary
+      metaFetch(`/act_${accId}/insights`, {
+        fields, time_range: timeRange(curr), level:'account'
+      }),
+      // Previous period summary
+      metaFetch(`/act_${accId}/insights`, {
+        fields, time_range: timeRange(prevRange), level:'account'
+      }),
+      // By campaign
+      metaFetch(`/act_${accId}/insights`, {
+        fields: 'campaign_name,spend,impressions,clicks,ctr,cpc,actions',
+        time_range: timeRange(curr), level:'campaign',
+        sort:'spend_descending', limit:'20'
+      }),
+      // Daily breakdown for chart
+      metaFetch(`/act_${accId}/insights`, {
+        fields: 'spend,impressions,clicks',
+        time_range: timeRange(curr),
+        time_increment:'1', level:'account'
+      })
+    ]);
+
+    document.getElementById('meta-loading').style.display='none';
+
+    const r = summary.data?.[0] || {};
+    const p = summaryPrev.data?.[0] || {};
+
+    // Helper: extract conversions from actions array
+    const getConv = (actions) => {
+      if(!actions) return 0;
+      const conv = actions.find(a => a.action_type === 'landing_page_view' || a.action_type === 'link_click' || a.action_type === 'offsite_conversion.fb_pixel_purchase');
+      return conv ? parseFloat(conv.value)||0 : actions.reduce((s,a)=>s+(parseFloat(a.value)||0),0);
+    };
+
+    // KPIs
+    const spend = parseFloat(r.spend)||0;
+    const pSpend = parseFloat(p.spend)||0;
+    const imp = parseFloat(r.impressions)||0;
+    const pImp = parseFloat(p.impressions)||0;
+    const clicks = parseFloat(r.clicks)||0;
+    const pClicks = parseFloat(p.clicks)||0;
+    const cpc = parseFloat(r.cpc)||0;
+    const pCpc = parseFloat(p.cpc)||0;
+    const ctr = parseFloat(r.ctr)||0;
+    const pCtr = parseFloat(p.ctr)||0;
+    const reach = parseFloat(r.reach)||0;
+    const pReach = parseFloat(p.reach)||0;
+    const cpm = parseFloat(r.cpm)||0;
+    const conv = getConv(r.actions);
+    const pConv = getConv(p.actions);
+
+    document.getElementById('meta-k-spend').textContent = spend>0?`$${Math.round(spend).toLocaleString('es-CL')}`:'—';
+    document.getElementById('meta-k-spend-d').innerHTML = dlt(spend,pSpend,false);
+    document.getElementById('meta-k-imp').textContent = fN(imp);
+    document.getElementById('meta-k-imp-d').innerHTML = dlt(imp,pImp,false);
+    document.getElementById('meta-k-clicks').textContent = fN(clicks);
+    document.getElementById('meta-k-clicks-d').innerHTML = dlt(clicks,pClicks,false);
+    document.getElementById('meta-k-cpc').textContent = cpc>0?`$${cpc.toFixed(2)}`:'—';
+    document.getElementById('meta-k-cpc-d').innerHTML = dlt(cpc,pCpc,true);
+    document.getElementById('meta-k-ctr').textContent = ctr>0?`${ctr.toFixed(2)}%`:'—';
+    document.getElementById('meta-k-ctr-d').innerHTML = dlt(ctr,pCtr,false);
+    document.getElementById('meta-k-reach').textContent = fN(reach);
+    document.getElementById('meta-k-reach-d').innerHTML = dlt(reach,pReach,false);
+    document.getElementById('meta-k-cpm').textContent = cpm>0?`$${cpm.toFixed(2)}`:'—';
+    document.getElementById('meta-k-conv').textContent = fN(conv);
+    document.getElementById('meta-k-conv-d').innerHTML = dlt(conv,pConv,false);
+    document.getElementById('meta-kpis').style.display='grid';
+    document.getElementById('meta-kpis2').style.display='grid';
+
+    // Campaigns table
+    const rows = campaigns.data || [];
+    document.getElementById('meta-tbody').innerHTML = !rows.length
+      ? `<tr><td colspan="6" style="text-align:center;color:var(--gray-400);font-family:'DM Mono',monospace;font-size:11px;padding:16px">Sin campañas en este período.</td></tr>`
+      : rows.map(row => {
+          const nm = row.campaign_name || '(sin nombre)';
+          return `<tr>
+            <td style="font-size:12px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${nm}">${nm}</td>
+            <td>$${Math.round(parseFloat(row.spend)||0).toLocaleString('es-CL')}</td>
+            <td>${fN(parseFloat(row.impressions)||0)}</td>
+            <td>${fN(parseFloat(row.clicks)||0)}</td>
+            <td>${parseFloat(row.cpc)>0?`$${parseFloat(row.cpc).toFixed(2)}`:'—'}</td>
+            <td>${parseFloat(row.ctr)>0?`${parseFloat(row.ctr).toFixed(2)}%`:'—'}</td>
+          </tr>`;
+        }).join('');
+
+    // Daily chart
+    const dailyRows = (daily.data||[]).sort((a,b)=>a.date_start?.localeCompare(b.date_start));
+    S.charts.metaTl = new Chart(document.getElementById('ch-meta-tl').getContext('2d'),{
+      type:'line',
+      data:{
+        labels: dailyRows.map(r=>r.date_start?.slice(5)||''),
+        datasets:[
+          {label:'Gasto ($)',data:dailyRows.map(r=>parseFloat(r.spend)||0),borderColor:'#1877f2',backgroundColor:'rgba(24,119,242,0.07)',tension:.4,fill:true,pointRadius:0,borderWidth:2,yAxisID:'y'},
+          {label:'Clics',data:dailyRows.map(r=>parseFloat(r.clicks)||0),borderColor:'#e8352a',backgroundColor:'rgba(232,53,42,0.04)',tension:.4,fill:false,pointRadius:0,borderWidth:1.5,borderDash:[4,3],yAxisID:'y1'}
+        ]
+      },
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{labels:{color:'#555',font:{size:10},boxWidth:8}}},
+        scales:{
+          x:{ticks:{color:'#888',font:{size:10},maxTicksLimit:10},grid:{color:'#f0f0ee'}},
+          y:{position:'left',ticks:{color:'#1877f2',font:{size:10},callback:v=>'$'+v},grid:{color:'#f0f0ee'}},
+          y1:{position:'right',ticks:{color:'#e8352a',font:{size:10}},grid:{display:false}}
+        }
+      }
+    });
+    document.getElementById('meta-main').style.display='grid';
+
+  }catch(e){
+    document.getElementById('meta-loading').style.display='none';
+    const errEl = document.getElementById('meta-error');
+    errEl.textContent = `⚠ Error Meta Ads: ${e.message}`;
+    errEl.style.display='block';
+  }
+}
+
+</script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { font-size: 14px; }
@@ -260,6 +435,12 @@ body { font-family: 'DM Sans', sans-serif; background: #f5f5f3; color: #111; min
   #btn-polaroid { display:none !important; }
 }
 
+
+/* Meta Ads */
+.meta-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:10px;}
+@media(max-width:900px){.meta-kpis{grid-template-columns:repeat(2,1fr);}}
+.meta-tag{background:#eff3ff;color:#1877f2;border-color:#bfcffe;font-size:10px;font-family:'DM Mono',monospace;padding:2px 7px;border-radius:20px;letter-spacing:.08em;text-transform:uppercase;border:1px solid;}
+
 </style>
 </head>
 <body>
@@ -281,6 +462,7 @@ body { font-family: 'DM Sans', sans-serif; background: #f5f5f3; color: #111; min
       <div class="nav" id="nv-aeo" onclick="goSec('aeo',this)"><span class="ndot"></span>AEO — Google AI</div>
       <div class="nav" id="nv-camp" onclick="goSec('camp',this)"><span class="ndot"></span>Campañas</div>
       <div class="nav" id="nv-geo" onclick="goSec('geo',this)"><span class="ndot"></span>AEO · GEO — IAs</div>
+      <div class="nav" id="nv-meta" onclick="goSec('meta',this)"><span class="ndot"></span>Meta Ads</div>
     </div>
     <div class="s-sec" style="flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden">
       <div class="s-lbl">Clientes
@@ -308,6 +490,7 @@ body { font-family: 'DM Sans', sans-serif; background: #f5f5f3; color: #111; min
       <div class="fl"><label class="fl-l">Nombre</label><input class="fi" type="text" id="m-nm" placeholder="Ej: Filtrocentro"/></div>
       <div class="fl"><label class="fl-l">Propiedad GSC</label><select class="fsel" id="m-site"><option>Cargando propiedades…</option></select></div>
       <div class="fl"><label class="fl-l">GA4 Property ID <span style="color:var(--gray-400)">(opcional)</span></label><input class="fi" type="text" id="m-ga4" placeholder="Ej: 123456789"/></div>
+      <div class="fl"><label class="fl-l">Meta Ad Account ID <span style="color:var(--gray-400)">(opcional)</span></label><input class="fi" type="text" id="m-meta" placeholder="Ej: 496715465693373"/></div>
       <div class="errmsg" id="m-err"></div>
       <div class="mact"><button class="bg" onclick="closeModal('mod-add')">Cancelar</button><button class="btn bb" style="width:auto" onclick="saveClient()">Guardar</button></div>
     </div>
@@ -374,6 +557,58 @@ body { font-family: 'DM Sans', sans-serif; background: #f5f5f3; color: #111; min
         </div>
       </div>
 
+
+
+      <!-- META ADS -->
+      <div class="screen" id="sc-meta">
+        <div class="ph">
+          <div><div class="ph-t">Meta Ads</div><div class="ph-s" id="meta-s">Campañas de Facebook e Instagram</div></div>
+          <div class="rtabs">
+            <button class="rtab on" onclick="setRangeMeta(14,this)">14d</button>
+            <button class="rtab" onclick="setRangeMeta(28,this)">28d</button>
+            <button class="rtab" onclick="setRangeMeta(90,this)">90d</button>
+          </div>
+        </div>
+
+        <div id="meta-no-acc" class="infobox warn" style="display:none">
+          ⚠ Este cliente no tiene Meta Ad Account configurado. Edita el cliente y agrega el Ad Account ID.
+        </div>
+        <div id="meta-loading" class="infobox info" style="display:none">
+          <div class="spin-row"><span class="spinner"></span>Cargando datos de Meta Ads…</div>
+        </div>
+        <div id="meta-error" class="infobox warn" style="display:none"></div>
+
+        <!-- KPIs -->
+        <div class="meta-kpis" id="meta-kpis" style="display:none">
+          <div class="kpi hi"><div class="kl">Gasto total</div><div class="kv" id="meta-k-spend">—</div><div class="kd" id="meta-k-spend-d"></div></div>
+          <div class="kpi"><div class="kl">Impresiones</div><div class="kv" id="meta-k-imp">—</div><div class="kd" id="meta-k-imp-d"></div></div>
+          <div class="kpi"><div class="kl">Clics al link</div><div class="kv" id="meta-k-clicks">—</div><div class="kd" id="meta-k-clicks-d"></div></div>
+          <div class="kpi"><div class="kl">CPC</div><div class="kv" id="meta-k-cpc">—</div><div class="kd" id="meta-k-cpc-d"></div></div>
+        </div>
+        <div class="meta-kpis" id="meta-kpis2" style="display:none">
+          <div class="kpi"><div class="kl">CTR</div><div class="kv" id="meta-k-ctr">—</div><div class="kd" id="meta-k-ctr-d"></div></div>
+          <div class="kpi"><div class="kl">Alcance</div><div class="kv" id="meta-k-reach">—</div><div class="kd" id="meta-k-reach-d"></div></div>
+          <div class="kpi"><div class="kl">CPM</div><div class="kv" id="meta-k-cpm">—</div><div class="kd"></div></div>
+          <div class="kpi"><div class="kl">Resultados</div><div class="kv" id="meta-k-conv">—</div><div class="kd" id="meta-k-conv-d"></div></div>
+        </div>
+
+        <!-- Campaigns table + chart -->
+        <div class="g2" id="meta-main" style="display:none;margin-top:10px">
+          <div class="panel">
+            <div class="ph2"><span class="pt">Resultados por campaña</span><span class="meta-tag">Meta Ads</span></div>
+            <div class="pb2" style="padding:0 16px 12px">
+              <table class="ga4t">
+                <thead><tr><th>Campaña</th><th>Gasto</th><th>Impresiones</th><th>Clics</th><th>CPC</th><th>CTR</th></tr></thead>
+                <tbody id="meta-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="ph2"><span class="pt">Gasto diario</span><span class="meta-tag">Meta</span></div>
+            <div class="pb2"><div class="cw"><canvas id="ch-meta-tl"></canvas></div></div>
+          </div>
+        </div>
+      </div>
 
       <!-- RECOMENDACIONES -->
       <div class="screen" id="sc-rec">
@@ -510,7 +745,7 @@ function uploadLogo(i){const f=i.files[0];if(!f)return;const r=new FileReader();
 function goSec(n,el){
   document.querySelectorAll('.nav').forEach(x=>x.classList.remove('on'));
   if(el)el.classList.add('on');
-  const t={seo:'Dashboard SEO',aeo:'AEO — Google AI',camp:'Campañas',geo:'AEO · GEO — IAs',rec:'✦ Recomendaciones'};
+  const t={seo:'Dashboard SEO',aeo:'AEO — Google AI',camp:'Campañas',geo:'AEO · GEO — IAs',meta:'Meta Ads',rec:'✦ Recomendaciones'};
   document.getElementById('t-sec').textContent=t[n]||n;
   if(!S.token){showAuth();return;}
   if(!S.url){alert('Selecciona un cliente del sidebar.');return;}
@@ -518,6 +753,7 @@ function goSec(n,el){
   if(n==='aeo')loadAEO();
   if(n==='camp')loadCamp();
   if(n==='geo')renderGEO();
+  if(n==='meta')loadMeta();
   if(n==='rec')loadRec();
 }
 
@@ -554,8 +790,9 @@ function saveClient(){
   const nm=document.getElementById('m-nm').value.trim();
   const url=document.getElementById('m-site').value;
   const ga4=document.getElementById('m-ga4').value.trim();
+  const meta=document.getElementById('m-meta').value.trim().replace(/^act_/,'');
   if(!nm||!url){const e=document.getElementById('m-err');e.textContent='⚠ Completa nombre y propiedad.';e.classList.add('on');return;}
-  const list=clients();list.push({id:Date.now().toString(),name:nm,url,ga4:ga4||null});
+  const list=clients();list.push({id:Date.now().toString(),name:nm,url,ga4:ga4||null,meta:meta||null});
   ls.s('bb_cl',list);closeModal('mod-add');renderCL();
 }
 function delC(e,id){e.stopPropagation();if(!confirm('¿Eliminar cliente?'))return;ls.s('bb_cl',clients().filter(c=>c.id!==id));if(S.id===id){S.id=null;S.url=null;S.name='';}renderCL();}
@@ -894,6 +1131,7 @@ function takePolaroid(){
       <div class="fl"><label class="fl-l">Nombre</label><input class="fi" type="text" id="m-nm" placeholder="Ej: Filtrocentro"/></div>
       <div class="fl"><label class="fl-l">Propiedad GSC</label><select class="fsel" id="m-site"><option>Cargando propiedades…</option></select></div>
       <div class="fl"><label class="fl-l">GA4 Property ID <span style="color:var(--gray-400)">(opcional)</span></label><input class="fi" type="text" id="m-ga4" placeholder="Ej: 123456789"/></div>
+      <div class="fl"><label class="fl-l">Meta Ad Account ID <span style="color:var(--gray-400)">(opcional)</span></label><input class="fi" type="text" id="m-meta" placeholder="Ej: 496715465693373"/></div>
       <div class="errmsg" id="m-err"></div>
       <div class="mact"><button class="bg" onclick="closeModal('mod-add')">Cancelar</button><button class="btn bb" style="width:auto" onclick="saveClient()">Guardar</button></div>
     </div>
