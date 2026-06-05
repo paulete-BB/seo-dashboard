@@ -735,11 +735,19 @@ async function loadGA4GEO(){
   const makeBody=(startDate,endDate)=>({dateRanges:[{startDate,endDate}],dimensions:[{name:'sessionSource'}],metrics:[{name:'sessions'},{name:'totalUsers'},{name:'conversions'},{name:'averageSessionDuration'}],dimensionFilter:domainFilter,limit:200});
   const ga4Fetch=async body=>{const res=await fetch(`https://analyticsdata.googleapis.com/v1beta/properties/${propId}:runReport`,{method:'POST',headers:{Authorization:`Bearer ${S.token}`,'Content-Type':'application/json'},body:JSON.stringify(body)});if(!res.ok){const e=await res.json();throw new Error(e.error?.message||`GA4 ${res.status}`);}return res.json();};
   try{
-    const[currData,prevData]=await Promise.all([ga4Fetch(makeBody(ago(S.days+3),ago(3))),ga4Fetch(makeBody(ago(S.days*2+3),ago(S.days+3)))]);
-    processGA4Data(currData,prevData);
+    const weeklyBody={
+      dateRanges:[{startDate:ago(S.days+3),endDate:ago(3)}],
+      dimensions:[{name:'yearWeek'},{name:'sessionSource'}],
+      metrics:[{name:'sessions'}],
+      dimensionFilter:domainFilter,
+      orderBys:[{dimension:{dimensionName:'yearWeek'}}],
+      limit:500
+    };
+    const[currData,prevData,weeklyData]=await Promise.all([ga4Fetch(makeBody(ago(S.days+3),ago(3))),ga4Fetch(makeBody(ago(S.days*2+3),ago(S.days+3))),ga4Fetch(weeklyBody)]);
+    processGA4Data(currData,prevData,weeklyData);
   }catch(e){document.getElementById('geo-ga4-loading').style.display='none';const errEl=document.getElementById('geo-ga4-error');errEl.textContent=`⚠ Error GA4: ${e.message}`;errEl.style.display='block';}
 }
-function processGA4Data(currData,prevData){
+function processGA4Data(currData,prevData,weeklyData){
   document.getElementById('geo-ga4-loading').style.display='none';
   const agg={};AI_SOURCES.forEach(s=>{agg[s.key]={label:s.label,color:s.color,curr:{sessions:0,users:0,conv:0,dur:0,durCount:0},prev:{sessions:0,users:0,conv:0}};});
   const parseRows=(rows,bucket)=>{(rows||[]).forEach(row=>{const src=row.dimensionValues[0].value.toLowerCase();const sessions=parseFloat(row.metricValues[0].value)||0;const users=parseFloat(row.metricValues[1].value)||0;const conv=parseFloat(row.metricValues[2].value)||0;const dur=parseFloat(row.metricValues[3].value)||0;const match=AI_SOURCES.find(s=>s.domains.some(d=>src.includes(d)));if(!match)return;agg[match.key][bucket].sessions+=sessions;agg[match.key][bucket].users+=users;agg[match.key][bucket].conv+=conv;if(bucket==='curr'){agg[match.key].curr.dur+=dur*sessions;agg[match.key].curr.durCount+=sessions;}});};
@@ -753,8 +761,43 @@ function processGA4Data(currData,prevData){
   document.getElementById('geo-kpis').style.display='grid';
   const sorted=Object.values(agg).sort((a,b)=>b.curr.sessions-a.curr.sessions);
   document.getElementById('geo-ga4-body').innerHTML=sorted.map(s=>{const avgDur=s.curr.durCount>0?s.curr.dur/s.curr.durCount:0;return`<tr><td><div class="ga4-src"><span class="ga4-dot" style="background:${s.color}"></span>${s.label}</div></td><td>${fN(s.curr.sessions)} ${s.prev.sessions>0?dlt(s.curr.sessions,s.prev.sessions,false):''}</td><td>${fN(s.curr.users)}</td><td>${fN(s.curr.conv)}</td><td>${fSec(avgDur)}</td></tr>`;}).join('');
+  // Build weekly line chart
   if(S.charts.geoTraffic)try{S.charts.geoTraffic.destroy();}catch(e){}
-  S.charts.geoTraffic=new Chart(document.getElementById('ch-geo-traffic').getContext('2d'),{type:'bar',data:{labels:sorted.map(s=>s.label.split('/')[0].trim()),datasets:[{label:'Per. anterior',data:sorted.map(s=>s.prev.sessions),backgroundColor:'#f0f0ee',borderRadius:4},{label:'Período actual',data:sorted.map(s=>s.curr.sessions),backgroundColor:sorted.map(s=>s.color),borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#555',font:{size:10},boxWidth:8}}},scales:{x:{ticks:{color:'#888',font:{size:10}},grid:{color:'#f0f0ee'}},y:{ticks:{color:'#888',font:{size:10}},grid:{color:'#f0f0ee'}}}}});
+  if(weeklyData){
+    // Aggregate weekly rows by AI source
+    const weeks=[];const weekAgg={};
+    (weeklyData.rows||[]).forEach(row=>{
+      const week=row.dimensionValues[0].value;// e.g. "202518"
+      const src=row.dimensionValues[1].value.toLowerCase();
+      const sessions=parseFloat(row.metricValues[0].value)||0;
+      const match=AI_SOURCES.find(s=>s.domains.some(d=>src.includes(d)));
+      if(!match)return;
+      if(!weekAgg[week])weekAgg[week]={};
+      weekAgg[week][match.key]=(weekAgg[week][match.key]||0)+sessions;
+      if(!weeks.includes(week))weeks.push(week);
+    });
+    weeks.sort();
+    // Format week labels: "202518" → "S18 '25"
+    const wLabels=weeks.map(w=>`S${w.slice(4)} '${w.slice(2,4)}`);
+    const datasets=AI_SOURCES.map(s=>({
+      label:s.label.split('/')[0].trim(),
+      data:weeks.map(w=>(weekAgg[w]&&weekAgg[w][s.key])||0),
+      borderColor:s.color,
+      backgroundColor:s.color+'22',
+      tension:.4,fill:false,pointRadius:3,pointHoverRadius:5,borderWidth:2
+    })).filter(ds=>ds.data.some(v=>v>0));// hide sources with no data
+    S.charts.geoTraffic=new Chart(document.getElementById('ch-geo-traffic').getContext('2d'),{
+      type:'line',
+      data:{labels:wLabels,datasets},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{labels:{color:'#555',font:{size:10},boxWidth:8,usePointStyle:true}}},
+        scales:{
+          x:{ticks:{color:'#888',font:{size:10},maxTicksLimit:12},grid:{color:'#f0f0ee'}},
+          y:{ticks:{color:'#888',font:{size:10},precision:0},grid:{color:'#f0f0ee'},min:0}
+        }
+      }
+    });
+  }
   document.getElementById('geo-ga4-section').style.display='grid';
 }
 
