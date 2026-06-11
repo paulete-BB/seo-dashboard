@@ -11,7 +11,7 @@
 let S_meta = { days: 14 };
 
 function setRangeMeta(d, btn){
-  S_meta.days = d;
+  S_meta.daåys = d;
   document.querySelectorAll('#sc-meta .rtab').forEach(b=>b.classList.remove('on'));
   btn.classList.add('on');
   loadMeta();
@@ -65,7 +65,15 @@ async function loadMeta(){
   const timeRange = (r) => JSON.stringify({ since: r.since, until: r.until });
 
   try{
-    const [summary, summaryPrev, campaigns, daily] = await Promise.all([
+    // Social pages
+    const fbPageId = client.fbpage || null;
+    const igPageId = client.igpage || null;
+    const socialPromises = [
+      fbPageId ? metaFetch(`/${fbPageId}`, {fields:'fan_count,name'}).catch(()=>null) : Promise.resolve(null),
+      igPageId ? metaFetch(`/${igPageId}`, {fields:'followers_count,username'}).catch(()=>null) : Promise.resolve(null),
+    ];
+
+    const [summary, summaryPrev, campaigns, daily, fbData, igData] = await Promise.all([
       // Current period summary
       metaFetch(`/act_${accId}/insights`, {
         fields, time_range: timeRange(curr), level:'account'
@@ -85,7 +93,8 @@ async function loadMeta(){
         fields: 'spend,impressions,clicks',
         time_range: timeRange(curr),
         time_increment:'1', level:'account'
-      })
+      }),
+      ...socialPromises
     ]);
 
     document.getElementById('meta-loading').style.display='none';
@@ -134,6 +143,39 @@ async function loadMeta(){
     document.getElementById('meta-k-conv-d').innerHTML = dlt(conv,pConv,false);
     document.getElementById('meta-kpis').style.display='grid';
     document.getElementById('meta-kpis2').style.display='grid';
+
+    // ── Social stats ────────────────────────────────────────────────────────
+    document.getElementById('meta-social').style.display='grid';
+
+    // Facebook followers
+    if(fbData && fbData.fan_count != null){
+      document.getElementById('meta-fb-followers').textContent = fN(fbData.fan_count) + ' seguidores';
+      document.getElementById('meta-fb-delta').innerHTML = '<span style="color:var(--gray-400)">@' + (fbData.name||'') + '</span>';
+    } else {
+      document.getElementById('meta-fb-row').style.opacity = '0.4';
+      document.getElementById('meta-fb-followers').textContent = 'Sin datos';
+    }
+
+    // Instagram followers
+    if(igData && igData.followers_count != null){
+      document.getElementById('meta-ig-followers').textContent = fN(igData.followers_count) + ' seguidores';
+      document.getElementById('meta-ig-delta').innerHTML = '<span style="color:var(--gray-400)">@' + (igData.username||'') + '</span>';
+    } else {
+      document.getElementById('meta-ig-row').style.opacity = '0.4';
+      document.getElementById('meta-ig-followers').textContent = 'Sin datos';
+    }
+
+    // Context panel: account-level summary
+    const hasSpend = spend > 0;
+    const hasCampaigns = rows.length > 0;
+    document.getElementById('meta-context-body').innerHTML = [
+      `<b>Cuenta:</b> act_${accId}`,
+      `<b>Período:</b> últimos ${S_meta.days} días`,
+      `<b>Campañas activas:</b> ${hasCampaigns ? rows.length : 'Sin datos'}`,
+      `<b>Gasto total:</b> ${hasSpend ? '$'+Math.round(spend).toLocaleString('es-CL') : 'Sin campañas activas'}`,
+      `<b>Frecuencia:</b> ${(reach > 0 && imp > 0) ? (imp/reach).toFixed(2) + 'x' : '—'}`,
+      `<b>Costo por resultado:</b> ${(conv > 0 && spend > 0) ? '$'+(spend/conv).toFixed(2) : '—'}`,
+    ].map(line => `<div>${line}</div>`).join('');
 
     // Campaigns table
     const rows = campaigns.data || [];
@@ -441,6 +483,15 @@ body { font-family: 'DM Sans', sans-serif; background: #f5f5f3; color: #111; min
 @media(max-width:900px){.meta-kpis{grid-template-columns:repeat(2,1fr);}}
 .meta-tag{background:#eff3ff;color:#1877f2;border-color:#bfcffe;font-size:10px;font-family:'DM Mono',monospace;padding:2px 7px;border-radius:20px;letter-spacing:.08em;text-transform:uppercase;border:1px solid;}
 
+
+/* Meta social */
+.social-row{display:flex;align-items:center;gap:12px;}
+.social-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;font-size:13px;font-weight:700;flex-shrink:0;}
+.social-info{flex:1;}
+.social-name{font-size:11px;color:var(--gray-400);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.08em;}
+.social-followers{font-size:22px;font-weight:600;letter-spacing:-.02em;color:var(--black);}
+.social-delta{font-size:11px;font-family:'DM Mono',monospace;margin-top:2px;}
+
 </style>
 </head>
 <body>
@@ -491,6 +542,8 @@ body { font-family: 'DM Sans', sans-serif; background: #f5f5f3; color: #111; min
       <div class="fl"><label class="fl-l">Propiedad GSC</label><select class="fsel" id="m-site"><option>Cargando propiedades…</option></select></div>
       <div class="fl"><label class="fl-l">GA4 Property ID <span style="color:var(--gray-400)">(opcional)</span></label><input class="fi" type="text" id="m-ga4" placeholder="Ej: 123456789"/></div>
       <div class="fl"><label class="fl-l">Meta Ad Account ID <span style="color:var(--gray-400)">(opcional)</span></label><input class="fi" type="text" id="m-meta" placeholder="Ej: 496715465693373"/></div>
+      <div class="fl"><label class="fl-l">Facebook Page ID <span style="color:var(--gray-400)">(opcional)</span></label><input class="fi" type="text" id="m-fbpage" placeholder="Ej: 111180974351659"/></div>
+      <div class="fl"><label class="fl-l">Instagram Account ID <span style="color:var(--gray-400)">(opcional)</span></label><input class="fi" type="text" id="m-igpage" placeholder="Ej: 17841454448873700"/></div>
       <div class="errmsg" id="m-err"></div>
       <div class="mact"><button class="bg" onclick="closeModal('mod-add')">Cancelar</button><button class="btn bb" style="width:auto" onclick="saveClient()">Guardar</button></div>
     </div>
@@ -590,6 +643,35 @@ body { font-family: 'DM Sans', sans-serif; background: #f5f5f3; color: #111; min
           <div class="kpi"><div class="kl">Alcance</div><div class="kv" id="meta-k-reach">—</div><div class="kd" id="meta-k-reach-d"></div></div>
           <div class="kpi"><div class="kl">CPM</div><div class="kv" id="meta-k-cpm">—</div><div class="kd"></div></div>
           <div class="kpi"><div class="kl">Resultados</div><div class="kv" id="meta-k-conv">—</div><div class="kd" id="meta-k-conv-d"></div></div>
+        </div>
+
+        <!-- Social stats -->
+        <div class="g2" id="meta-social" style="display:none;margin-top:10px">
+          <div class="panel">
+            <div class="ph2"><span class="pt">Comunidad</span><span class="meta-tag">Meta</span></div>
+            <div class="pb2">
+              <div class="social-row" id="meta-fb-row">
+                <div class="social-icon" style="background:#1877f2">f</div>
+                <div class="social-info">
+                  <div class="social-name">Facebook</div>
+                  <div class="social-followers" id="meta-fb-followers">—</div>
+                  <div class="social-delta" id="meta-fb-delta"></div>
+                </div>
+              </div>
+              <div class="social-row" id="meta-ig-row" style="margin-top:12px">
+                <div class="social-icon" style="background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)">ig</div>
+                <div class="social-info">
+                  <div class="social-name">Instagram</div>
+                  <div class="social-followers" id="meta-ig-followers">—</div>
+                  <div class="social-delta" id="meta-ig-delta"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="ph2"><span class="pt">Contexto de cuenta</span><span class="meta-tag">Meta</span></div>
+            <div class="pb2" id="meta-context-body" style="font-size:12px;line-height:1.9;color:var(--gray-600);font-family:'DM Mono',monospace"></div>
+          </div>
         </div>
 
         <!-- Campaigns table + chart -->
@@ -775,6 +857,8 @@ async function openAdd(){
   document.getElementById('m-err').classList.remove('on');
   document.getElementById('m-nm').value='';
   document.getElementById('m-ga4').value='';
+  if(document.getElementById('m-fbpage'))document.getElementById('m-fbpage').value='';
+  if(document.getElementById('m-igpage'))document.getElementById('m-igpage').value='';
   const sel=document.getElementById('m-site');
   sel.innerHTML='<option>Cargando propiedades…</option>';
   document.getElementById('mod-add').classList.remove('hidden');
@@ -791,8 +875,10 @@ function saveClient(){
   const url=document.getElementById('m-site').value;
   const ga4=document.getElementById('m-ga4').value.trim();
   const meta=document.getElementById('m-meta').value.trim().replace(/^act_/,'');
+  const fbpage=document.getElementById('m-fbpage').value.trim();
+  const igpage=document.getElementById('m-igpage').value.trim();
   if(!nm||!url){const e=document.getElementById('m-err');e.textContent='⚠ Completa nombre y propiedad.';e.classList.add('on');return;}
-  const list=clients();list.push({id:Date.now().toString(),name:nm,url,ga4:ga4||null,meta:meta||null});
+  const list=clients();list.push({id:Date.now().toString(),name:nm,url,ga4:ga4||null,meta:meta||null,fbpage:fbpage||null,igpage:igpage||null});
   ls.s('bb_cl',list);closeModal('mod-add');renderCL();
 }
 function delC(e,id){e.stopPropagation();if(!confirm('¿Eliminar cliente?'))return;ls.s('bb_cl',clients().filter(c=>c.id!==id));if(S.id===id){S.id=null;S.url=null;S.name='';}renderCL();}
@@ -1132,6 +1218,8 @@ function takePolaroid(){
       <div class="fl"><label class="fl-l">Propiedad GSC</label><select class="fsel" id="m-site"><option>Cargando propiedades…</option></select></div>
       <div class="fl"><label class="fl-l">GA4 Property ID <span style="color:var(--gray-400)">(opcional)</span></label><input class="fi" type="text" id="m-ga4" placeholder="Ej: 123456789"/></div>
       <div class="fl"><label class="fl-l">Meta Ad Account ID <span style="color:var(--gray-400)">(opcional)</span></label><input class="fi" type="text" id="m-meta" placeholder="Ej: 496715465693373"/></div>
+      <div class="fl"><label class="fl-l">Facebook Page ID <span style="color:var(--gray-400)">(opcional)</span></label><input class="fi" type="text" id="m-fbpage" placeholder="Ej: 111180974351659"/></div>
+      <div class="fl"><label class="fl-l">Instagram Account ID <span style="color:var(--gray-400)">(opcional)</span></label><input class="fi" type="text" id="m-igpage" placeholder="Ej: 17841454448873700"/></div>
       <div class="errmsg" id="m-err"></div>
       <div class="mact"><button class="bg" onclick="closeModal('mod-add')">Cancelar</button><button class="btn bb" style="width:auto" onclick="saveClient()">Guardar</button></div>
     </div>
