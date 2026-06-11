@@ -1121,6 +1121,9 @@ async function loadMeta(){
     document.getElementById('meta-kpis').style.display='grid';
     document.getElementById('meta-kpis2').style.display='grid';
 
+    // ── Campaigns table (declare rows first) ────────────────────────────────
+    const rows = campaigns.data || [];
+
     // ── Social stats ────────────────────────────────────────────────────────
     document.getElementById('meta-social').style.display='grid';
 
@@ -1142,20 +1145,16 @@ async function loadMeta(){
       document.getElementById('meta-ig-followers').textContent = 'Sin datos';
     }
 
-    // Context panel: account-level summary
+    // Context panel
     const hasSpend = spend > 0;
-    const hasCampaigns = rows.length > 0;
     document.getElementById('meta-context-body').innerHTML = [
       `<b>Cuenta:</b> act_${accId}`,
       `<b>Período:</b> últimos ${S_meta.days} días`,
-      `<b>Campañas activas:</b> ${hasCampaigns ? rows.length : 'Sin datos'}`,
+      `<b>Campañas activas:</b> ${rows.length > 0 ? rows.length : 'Sin campañas'}`,
       `<b>Gasto total:</b> ${hasSpend ? '$'+Math.round(spend).toLocaleString('es-CL') : 'Sin campañas activas'}`,
       `<b>Frecuencia:</b> ${(reach > 0 && imp > 0) ? (imp/reach).toFixed(2) + 'x' : '—'}`,
       `<b>Costo por resultado:</b> ${(conv > 0 && spend > 0) ? '$'+(spend/conv).toFixed(2) : '—'}`,
     ].map(line => `<div>${line}</div>`).join('');
-
-    // Campaigns table
-    const rows = campaigns.data || [];
     document.getElementById('meta-tbody').innerHTML = !rows.length
       ? `<tr><td colspan="6" style="text-align:center;color:var(--gray-400);font-family:'DM Mono',monospace;font-size:11px;padding:16px">Sin campañas en este período.</td></tr>`
       : rows.map(row => {
