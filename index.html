@@ -327,6 +327,7 @@ body { font-family: 'DM Sans', sans-serif; background: #f5f5f3; color: #111; min
       <div class="fl"><label class="fl-l">Meta Ad Account ID <span style="color:var(--gray-400)">(opcional)</span></label><input class="fi" type="text" id="m-meta" placeholder="Ej: 496715465693373"/></div>
       <div class="fl"><label class="fl-l">Facebook Page ID <span style="color:var(--gray-400)">(opcional)</span></label><input class="fi" type="text" id="m-fbpage" placeholder="Ej: 111180974351659"/></div>
       <div class="fl"><label class="fl-l">Instagram Account ID <span style="color:var(--gray-400)">(opcional)</span></label><input class="fi" type="text" id="m-igpage" placeholder="Ej: 17841454448873700"/></div>
+      <div class="fl"><label class="fl-l">Seguidores Instagram <span style="color:var(--gray-400)">(manual, opcional)</span></label><input class="fi" type="number" id="m-igfollowers" placeholder="Ej: 1250"/></div>
       <div class="errmsg" id="m-err"></div>
       <div class="mact"><button class="bg" onclick="closeModal('mod-add')">Cancelar</button><button class="btn bb" style="width:auto" onclick="saveClient()">Guardar</button></div>
     </div>
@@ -661,7 +662,8 @@ function saveClient(){
   const fbpage=document.getElementById('m-fbpage').value.trim();
   const igpage=document.getElementById('m-igpage').value.trim();
   if(!nm||!url){const e=document.getElementById('m-err');e.textContent='⚠ Completa nombre y propiedad.';e.classList.add('on');return;}
-  const list=clients();list.push({id:Date.now().toString(),name:nm,url,ga4:ga4||null,meta:meta||null,fbpage:fbpage||null,igpage:igpage||null});
+  const igfollowers=document.getElementById('m-igfollowers')?.value.trim();
+  const list=clients();list.push({id:Date.now().toString(),name:nm,url,ga4:ga4||null,meta:meta||null,fbpage:fbpage||null,igpage:igpage||null,igfollowers:igfollowers?parseInt(igfollowers):null});
   ls.s('bb_cl',list);closeModal('mod-add');renderCL();
 }
 function delC(e,id){e.stopPropagation();if(!confirm('¿Eliminar cliente?'))return;ls.s('bb_cl',clients().filter(c=>c.id!==id));if(S.id===id){S.id=null;S.url=null;S.name='';}renderCL();}
@@ -1047,7 +1049,7 @@ async function loadMeta(){
     const igPageId = client.igpage || null;
     const socialPromises = [
       fbPageId ? metaFetch(`/${fbPageId}`, {fields:'fan_count,name'}).catch(()=>null) : Promise.resolve(null),
-      igPageId ? metaFetch(`/${igPageId}`, {fields:'followers_count,username'}).catch(()=>null) : Promise.resolve(null),
+      fbPageId ? metaFetch(`/${fbPageId}`, {fields:'instagram_business_account{followers_count,username}'}).catch(()=>null) : Promise.resolve(null),
     ];
 
     const [summary, summaryPrev, campaigns, daily, fbData, igData] = await Promise.all([
@@ -1136,13 +1138,19 @@ async function loadMeta(){
       document.getElementById('meta-fb-followers').textContent = 'Sin datos';
     }
 
-    // Instagram followers
-    if(igData && igData.followers_count != null){
-      document.getElementById('meta-ig-followers').textContent = fN(igData.followers_count) + ' seguidores';
-      document.getElementById('meta-ig-delta').innerHTML = '<span style="color:var(--gray-400)">@' + (igData.username||'') + '</span>';
+    // Instagram followers - API first, fallback to manual
+    const igAccount = igData?.instagram_business_account || igData?.connected_instagram_account;
+    const manualIgFollowers = client.igfollowers || null;
+    if(igAccount && igAccount.followers_count != null){
+      document.getElementById('meta-ig-followers').textContent = fN(igAccount.followers_count) + ' seguidores';
+      document.getElementById('meta-ig-delta').innerHTML = '<span style="color:var(--gray-400)">@' + (igAccount.username||'') + '</span>';
+    } else if(manualIgFollowers){
+      document.getElementById('meta-ig-followers').textContent = fN(manualIgFollowers) + ' seguidores';
+      document.getElementById('meta-ig-delta').innerHTML = '<span style="color:var(--gray-400);font-size:10px">dato manual · @tecnystandchile</span>';
     } else {
       document.getElementById('meta-ig-row').style.opacity = '0.4';
-      document.getElementById('meta-ig-followers').textContent = 'Sin datos';
+      document.getElementById('meta-ig-followers').textContent = '—';
+      document.getElementById('meta-ig-delta').innerHTML = '<span style="color:var(--gray-400);font-size:10px">Agrega seguidores al editar el cliente</span>';
     }
 
     // Context panel
@@ -1221,6 +1229,7 @@ async function loadMeta(){
       <div class="fl"><label class="fl-l">Meta Ad Account ID <span style="color:var(--gray-400)">(opcional)</span></label><input class="fi" type="text" id="m-meta" placeholder="Ej: 496715465693373"/></div>
       <div class="fl"><label class="fl-l">Facebook Page ID <span style="color:var(--gray-400)">(opcional)</span></label><input class="fi" type="text" id="m-fbpage" placeholder="Ej: 111180974351659"/></div>
       <div class="fl"><label class="fl-l">Instagram Account ID <span style="color:var(--gray-400)">(opcional)</span></label><input class="fi" type="text" id="m-igpage" placeholder="Ej: 17841454448873700"/></div>
+      <div class="fl"><label class="fl-l">Seguidores Instagram <span style="color:var(--gray-400)">(manual, opcional)</span></label><input class="fi" type="number" id="m-igfollowers" placeholder="Ej: 1250"/></div>
       <div class="errmsg" id="m-err"></div>
       <div class="mact"><button class="bg" onclick="closeModal('mod-add')">Cancelar</button><button class="btn bb" style="width:auto" onclick="saveClient()">Guardar</button></div>
     </div>
