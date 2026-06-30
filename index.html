@@ -37,6 +37,8 @@ body { font-family: 'DM Sans', sans-serif; background: #f5f5f3; color: #111; min
 .nav.on { background:var(--red-light); color:var(--red); font-weight:500; }
 .ndot { width:6px; height:6px; border-radius:50%; background:#ddd; flex-shrink:0; }
 .nav.on .ndot { background:var(--red); }
+.nav.locked { opacity:.45; }
+.nav.locked::after { content:'🔒'; margin-left:auto; font-size:9px; }
 .clist { flex:1; overflow-y:auto; min-height:0; }
 .ci { display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:var(--radius); cursor:pointer; transition:background .12s; position:relative; }
 .ci:hover { background:var(--gray-100); }
@@ -322,6 +324,14 @@ body { font-family: 'DM Sans', sans-serif; background: #f5f5f3; color: #111; min
       <div class="mt" id="m-title">Agregar cliente</div>
       <div class="ms" id="m-sub">Selecciona la propiedad directamente desde tu GSC — sin escribir URLs a mano.</div>
       <div class="fl"><label class="fl-l">Nombre</label><input class="fi" type="text" id="m-nm" placeholder="Ej: Filtrocentro"/></div>
+      <div class="fl">
+        <label class="fl-l">Servicios contratados</label>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer"><input type="checkbox" id="m-svc-seo" value="seo"/> Posicionamiento SEO · AEO · GEO</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer"><input type="checkbox" id="m-svc-ads" value="ads"/> Google Ads</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer"><input type="checkbox" id="m-svc-meta" value="meta"/> Meta Ads</label>
+        </div>
+      </div>
       <div class="fl"><label class="fl-l">Propiedad GSC</label><select class="fsel" id="m-site"><option>Cargando propiedades…</option></select></div>
       <div class="fl"><label class="fl-l">GA4 Property ID <span style="color:var(--gray-400)">(opcional)</span></label><input class="fi" type="text" id="m-ga4" placeholder="Ej: 123456789"/></div>
       <div class="fl"><label class="fl-l">Meta Ad Account ID <span style="color:var(--gray-400)">(opcional)</span></label><input class="fi" type="text" id="m-meta" placeholder="Ej: 496715465693373"/></div>
@@ -378,6 +388,8 @@ body { font-family: 'DM Sans', sans-serif; background: #f5f5f3; color: #111; min
           <div><div class="ph-t" id="seo-t">Dashboard SEO</div><div class="ph-s" id="seo-s">—</div></div>
           <div class="rtabs"><button class="rtab on" onclick="setRange(14,this)">14d</button><button class="rtab" onclick="setRange(28,this)">28d</button><button class="rtab" onclick="setRange(90,this)">90d</button></div>
         </div>
+        <div id="seo-no-service" class="infobox" style="display:none">🔒 No tienes el servicio de Posicionamiento SEO · AEO · GEO contratado, pero cuando quieras puedes activarlo con nosotros.</div>
+        <div id="seo-body">
         <div class="kpis">
           <div class="kpi hi"><div class="kl">Clics totales</div><div class="kv" id="k-cl">—</div><div class="kd" id="k-cl-d"></div></div>
           <div class="kpi"><div class="kl">Impresiones</div><div class="kv" id="k-im">—</div><div class="kd" id="k-im-d"></div></div>
@@ -391,6 +403,7 @@ body { font-family: 'DM Sans', sans-serif; background: #f5f5f3; color: #111; min
         <div class="g2">
           <div class="panel"><div class="ph2"><span class="pt">Top keywords</span><span class="ptag tl2">Live</span></div><div class="pb2" style="padding:0 16px 12px"><table class="kwt"><thead><tr><th>Keyword</th><th>Pos.</th><th>Clics</th><th>CTR</th><th>Δ</th></tr></thead><tbody id="kw-body"></tbody></table></div></div>
           <div class="panel"><div class="ph2"><span class="pt">CTR por query</span><span class="ptag tg">GSC</span></div><div class="pb2"><div id="ctr-body"></div></div></div>
+        </div>
         </div>
       </div>
 
@@ -407,6 +420,7 @@ body { font-family: 'DM Sans', sans-serif; background: #f5f5f3; color: #111; min
           </div>
         </div>
 
+        <div id="meta-no-service" class="infobox" style="display:none">🔒 No tienes el servicio de Meta Ads contratado, pero cuando quieras puedes activarlo con nosotros.</div>
         <div id="meta-no-acc" class="infobox warn" style="display:none">
           ⚠ Este cliente no tiene Meta Ad Account configurado. Edita el cliente y agrega el Ad Account ID.
         </div>
@@ -415,6 +429,7 @@ body { font-family: 'DM Sans', sans-serif; background: #f5f5f3; color: #111; min
         </div>
         <div id="meta-error" class="infobox warn" style="display:none"></div>
 
+        <div id="meta-body">
         <!-- KPIs -->
         <div class="meta-kpis" id="meta-kpis" style="display:none">
           <div class="kpi hi"><div class="kl">Gasto total</div><div class="kv" id="meta-k-spend">—</div><div class="kd" id="meta-k-spend-d"></div></div>
@@ -474,6 +489,7 @@ body { font-family: 'DM Sans', sans-serif; background: #f5f5f3; color: #111; min
             <div class="pb2"><div class="cw"><canvas id="ch-meta-tl"></canvas></div></div>
           </div>
         </div>
+        </div>
       </div>
 
       <!-- RECOMENDACIONES -->
@@ -499,7 +515,8 @@ body { font-family: 'DM Sans', sans-serif; background: #f5f5f3; color: #111; min
           <div><div class="ph-t">AEO — Google AI</div><div class="ph-s" id="aeo-s">Queries conversacionales</div></div>
           <div class="rtabs"><button class="rtab on" onclick="setRange(14,this);loadAEO()">14d</button><button class="rtab" onclick="setRange(28,this);loadAEO()">28d</button><button class="rtab" onclick="setRange(90,this);loadAEO()">90d</button></div>
         </div>
-        <div class="panel">
+        <div id="aeo-no-service" class="infobox" style="display:none">🔒 No tienes el servicio de Posicionamiento SEO · AEO · GEO contratado, pero cuando quieras puedes activarlo con nosotros.</div>
+        <div id="aeo-body" class="panel">
           <div class="ph2"><span class="pt">Queries conversacionales (proxy AI Overviews)</span><span class="ptag ta">Heurística GSC</span></div>
           <div class="pb2" style="padding:0 16px 14px">
             <div class="infobox" style="margin-bottom:10px;margin-top:8px">Queries de 5+ palabras o con intención informacional — los que con mayor frecuencia disparan AI Overviews.</div>
@@ -514,6 +531,7 @@ body { font-family: 'DM Sans', sans-serif; background: #f5f5f3; color: #111; min
           <div><div class="ph-t">Campañas</div><div class="ph-s" id="camp-s">Resultados desde GA4</div></div>
           <div class="rtabs"><button class="rtab on" onclick="setRange(14,this);loadCamp()">14d</button><button class="rtab" onclick="setRange(28,this);loadCamp()">28d</button><button class="rtab" onclick="setRange(90,this);loadCamp()">90d</button></div>
         </div>
+        <div id="camp-no-service" class="infobox" style="display:none">🔒 No tienes el servicio de Google Ads contratado, pero cuando quieras puedes activarlo con nosotros.</div>
         <div id="camp-no-ga4" class="infobox warn" style="display:none">⚠ Este cliente no tiene GA4 configurado.</div>
         <div id="camp-loading" class="infobox info" style="display:none"><div class="spin-row"><span class="spinner"></span>Cargando campañas…</div></div>
         <div id="camp-error" class="infobox warn" style="display:none"></div>
@@ -542,6 +560,7 @@ body { font-family: 'DM Sans', sans-serif; background: #f5f5f3; color: #111; min
             <div class="rtabs"><button class="rtab on" onclick="setRangeGeo(14,this)">14d</button><button class="rtab" onclick="setRangeGeo(28,this)">28d</button><button class="rtab" onclick="setRangeGeo(90,this)">90d</button></div>
           </div>
         </div>
+        <div id="geo-no-service" class="infobox" style="display:none">🔒 No tienes el servicio de Posicionamiento SEO · AEO · GEO contratado, pero cuando quieras puedes activarlo con nosotros.</div>
         <div class="geo-kpis" id="geo-kpis" style="display:none">
           <div class="kpi"><div class="kl">Sesiones desde IAs</div><div class="kv" id="geo-k-sess">—</div><div class="kd" id="geo-k-sess-d"></div></div>
           <div class="kpi hi"><div class="kl">Usuarios desde IAs</div><div class="kv" id="geo-k-usr">—</div><div class="kd" id="geo-k-usr-d"></div></div>
@@ -572,6 +591,12 @@ const AI_SOURCES=[
 const S={token:null,url:null,name:'',id:null,days:14,charts:{},kws:[]};
 const ls={g:k=>{try{return JSON.parse(localStorage.getItem(k));}catch(e){return null;}},s:(k,v)=>localStorage.setItem(k,JSON.stringify(v))};
 const clients=()=>ls.g('bb_cl')||[];
+const SERVICES=[{key:'seo',label:'Posicionamiento SEO · AEO · GEO'},{key:'ads',label:'Google Ads'},{key:'meta',label:'Meta Ads'}];
+function hasService(key){
+  const c=clients().find(x=>x.id===S.id);
+  if(!c||!c.services)return true; // sin campo "services" = sin restricción (compatibilidad)
+  return c.services.includes(key);
+}
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
 function ago(n){const d=new Date();d.setDate(d.getDate()-n);return d.toISOString().slice(0,10);}
@@ -649,6 +674,7 @@ async function openAdd(){
   if(document.getElementById('m-fbpage'))document.getElementById('m-fbpage').value='';
   if(document.getElementById('m-igpage'))document.getElementById('m-igpage').value='';
   if(document.getElementById('m-igfollowers'))document.getElementById('m-igfollowers').value='';
+  SERVICES.forEach(s=>document.getElementById('m-svc-'+s.key).checked=false);
   await fillSiteSelect();
   document.getElementById('mod-add').classList.remove('hidden');
 }
@@ -666,6 +692,8 @@ async function editClient(e,id){
   if(document.getElementById('m-fbpage'))document.getElementById('m-fbpage').value=c.fbpage||'';
   if(document.getElementById('m-igpage'))document.getElementById('m-igpage').value=c.igpage||'';
   if(document.getElementById('m-igfollowers'))document.getElementById('m-igfollowers').value=c.igfollowers||'';
+  const svc=c.services||SERVICES.map(s=>s.key);
+  SERVICES.forEach(s=>document.getElementById('m-svc-'+s.key).checked=svc.includes(s.key));
   document.getElementById('mod-add').classList.remove('hidden');
   await fillSiteSelect(c.url);
 }
@@ -689,16 +717,18 @@ function saveClient(){
   const fbpage=document.getElementById('m-fbpage').value.trim();
   const igpage=document.getElementById('m-igpage').value.trim();
   if(!nm||!url){const e=document.getElementById('m-err');e.textContent='⚠ Completa nombre y propiedad.';e.classList.add('on');return;}
+  const services=SERVICES.filter(s=>document.getElementById('m-svc-'+s.key).checked).map(s=>s.key);
+  if(!services.length){const e=document.getElementById('m-err');e.textContent='⚠ Selecciona al menos un servicio contratado.';e.classList.add('on');return;}
   const igfollowers=document.getElementById('m-igfollowers')?.value.trim();
   const list=clients();
-  const data={name:nm,url,ga4:ga4||null,meta:meta||null,fbpage:fbpage||null,igpage:igpage||null,igfollowers:igfollowers?parseInt(igfollowers):null};
+  const data={name:nm,url,ga4:ga4||null,meta:meta||null,fbpage:fbpage||null,igpage:igpage||null,igfollowers:igfollowers?parseInt(igfollowers):null,services};
   if(S_editId){
     const idx=list.findIndex(c=>c.id===S_editId);
     if(idx>-1){list[idx]={...list[idx],...data};if(S.id===S_editId){S.url=url;S.name=nm;}}
   }else{
     list.push({id:Date.now().toString(),...data});
   }
-  ls.s('bb_cl',list);closeModal('mod-add');renderCL();
+  ls.s('bb_cl',list);closeModal('mod-add');renderCL();updateNavLocks();
 }
 function delC(e,id){e.stopPropagation();if(!confirm('¿Eliminar cliente?'))return;ls.s('bb_cl',clients().filter(c=>c.id!==id));if(S.id===id){S.id=null;S.url=null;S.name='';}renderCL();}
 
@@ -719,7 +749,15 @@ function pickClient(id){
   if(!S.token){sessionStorage.setItem('bb_pend',id);doOAuth();return;}
   S.id=c.id;S.url=c.url;S.name=c.name;
   sessionStorage.setItem('bb_last',id);
-  renderCL();enterDash();closeSidebar();
+  renderCL();updateNavLocks();enterDash();closeSidebar();
+}
+function updateNavLocks(){
+  const c=clients().find(x=>x.id===S.id);
+  const svc=c&&c.services;
+  document.querySelectorAll('.nav[id^="nv-"]').forEach(n=>n.classList.remove('locked'));
+  if(!svc)return;
+  const map={seo:['nv-seo','nv-aeo','nv-geo'],ads:['nv-camp'],meta:['nv-meta']};
+  Object.entries(map).forEach(([key,ids])=>{if(!svc.includes(key))ids.forEach(id=>document.getElementById(id)?.classList.add('locked'));});
 }
 function doOAuth(){const st=Math.random().toString(36).slice(2);sessionStorage.setItem('bb_os',st);const p=new URLSearchParams({client_id:CID,redirect_uri:REDIR,response_type:'token',scope:SCOPE,state:st});location.href='https://accounts.google.com/o/oauth2/v2/auth?'+p;}
 function doLogout(){S.token=null;S.url=null;S.name='';S.id=null;sessionStorage.removeItem('bb_t');sessionStorage.removeItem('bb_last');destroyC();setConn(false);renderCL();showAuth();}
@@ -734,10 +772,12 @@ function enterDash(){
   document.getElementById('ag-nm').textContent=S.name||'Bigbuda';
   document.getElementById('logo-ph').textContent=(S.name||'B')[0].toUpperCase();
   document.querySelectorAll('.nav').forEach(n=>n.classList.remove('on'));
-  document.getElementById('nv-seo').classList.add('on');
-  document.getElementById('t-sec').textContent='Dashboard SEO';
   document.getElementById('btn-polaroid').style.display='';
-  showSc('sc-seo');loadSEO();
+  const landing=hasService('seo')?{n:'seo',nv:'nv-seo',t:'Dashboard SEO'}:hasService('ads')?{n:'camp',nv:'nv-camp',t:'Campañas'}:hasService('meta')?{n:'meta',nv:'nv-meta',t:'Meta Ads'}:{n:'seo',nv:'nv-seo',t:'Dashboard SEO'};
+  document.getElementById(landing.nv).classList.add('on');
+  document.getElementById('t-sec').textContent=landing.t;
+  showSc('sc-'+landing.n);
+  if(landing.n==='seo')loadSEO();else if(landing.n==='camp')loadCamp();else if(landing.n==='meta')loadMeta();
 }
 function setRange(d,btn){S.days=d;document.querySelectorAll('#sc-seo .rtab, #sc-aeo .rtab, #sc-camp .rtab').forEach(b=>b.classList.remove('on'));btn.classList.add('on');loadSEO();}
 function setRangeGeo(d,btn){S.days=d;document.querySelectorAll('#sc-geo .rtab').forEach(b=>b.classList.remove('on'));btn.classList.add('on');renderGEO();}
@@ -754,6 +794,8 @@ function handleExpiredToken(){sessionStorage.removeItem('bb_t');S.token=null;set
 // ─── SEO ─────────────────────────────────────────────────────────────────────
 async function loadSEO(){
   if(!S.token||!S.url)return;
+  if(!hasService('seo')){document.getElementById('seo-no-service').style.display='block';document.getElementById('seo-body').style.display='none';return;}
+  document.getElementById('seo-no-service').style.display='none';document.getElementById('seo-body').style.display='';
   ['k-cl','k-im','k-ct','k-po'].forEach(i=>{document.getElementById(i).textContent='···';document.getElementById(i+'-d').innerHTML='';});
   document.getElementById('seo-t').textContent=S.name;
   document.getElementById('seo-s').textContent=`${S.url.replace(/https?:\/\//,'').replace(/\/$/,'')} · últimos ${S.days} días`;
@@ -795,6 +837,8 @@ async function loadKW(){
 // ─── AEO ─────────────────────────────────────────────────────────────────────
 async function loadAEO(){
   if(!S.token||!S.url)return;
+  if(!hasService('seo')){document.getElementById('aeo-no-service').style.display='block';document.getElementById('aeo-body').style.display='none';return;}
+  document.getElementById('aeo-no-service').style.display='none';document.getElementById('aeo-body').style.display='';
   document.getElementById('aeo-s').textContent=`${S.name} · últimos ${S.days} días`;
   document.getElementById('aeo-conv-body').innerHTML='<div class="empty">Cargando…</div>';
   try{await loadAEOConversational();}catch(e){console.error('AEO:',e.message);}
@@ -816,6 +860,8 @@ async function loadAEOConversational(){
 async function loadCamp(){
   if(!S.token||!S.id)return;
   const client=clients().find(x=>x.id===S.id);
+  if(!hasService('ads')){document.getElementById('camp-no-service').style.display='block';['camp-no-ga4','camp-loading','camp-error','camp-kpis','camp-main','camp-tl-panel'].forEach(id=>document.getElementById(id).style.display='none');return;}
+  document.getElementById('camp-no-service').style.display='none';
   if(!client?.ga4){document.getElementById('camp-no-ga4').style.display='block';['camp-loading','camp-error','camp-kpis','camp-main','camp-tl-panel'].forEach(id=>document.getElementById(id).style.display='none');return;}
   document.getElementById('camp-s').textContent=`${S.name} · últimos ${S.days} días`;
   document.getElementById('camp-no-ga4').style.display='none';document.getElementById('camp-error').style.display='none';document.getElementById('camp-kpis').style.display='none';document.getElementById('camp-main').style.display='none';document.getElementById('camp-tl-panel').style.display='none';document.getElementById('camp-loading').style.display='block';
@@ -856,6 +902,12 @@ async function loadCamp(){
 // ─── GEO ─────────────────────────────────────────────────────────────────────
 function renderGEO(){
   document.getElementById('geo-s').textContent=`${S.name} · últimos ${S.days} días`;
+  if(!hasService('seo')){
+    document.getElementById('geo-no-service').style.display='block';document.getElementById('geo-ga4-btn').style.display='none';
+    ['geo-kpis','geo-ga4-section','geo-no-ga4','geo-ga4-loading','geo-ga4-error'].forEach(id=>document.getElementById(id).style.display='none');
+    return;
+  }
+  document.getElementById('geo-no-service').style.display='none';
   const c=clients().find(x=>x.id===S.id);
   const hasGA4=c&&c.ga4;
   document.getElementById('geo-ga4-btn').style.display=hasGA4?'':'none';
@@ -868,6 +920,7 @@ function showNoGA4(){
 }
 async function loadGA4GEO(){
   if(!S.token||!S.id)return;
+  if(!hasService('seo'))return;
   const c=clients().find(x=>x.id===S.id);
   if(!c?.ga4){showNoGA4();return;}
   const propId=c.ga4;
@@ -1052,6 +1105,13 @@ function metaDateRange(days){
 async function loadMeta(){
   if(!S.token||!S.id) return;
   const client = clients().find(x=>x.id===S.id);
+  if(!hasService('meta')){
+    document.getElementById('meta-no-service').style.display='block';
+    ['meta-no-acc','meta-loading','meta-error','meta-body'].forEach(id=>document.getElementById(id).style.display='none');
+    return;
+  }
+  document.getElementById('meta-no-service').style.display='none';
+  document.getElementById('meta-body').style.display='';
   if(!client?.meta){
     document.getElementById('meta-no-acc').style.display='block';
     ['meta-loading','meta-error','meta-kpis','meta-kpis2','meta-main'].forEach(id=>document.getElementById(id).style.display='none');
