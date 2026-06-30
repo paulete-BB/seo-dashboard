@@ -639,7 +639,7 @@ function goSec(n,el){
   const t={seo:'Dashboard SEO',aeo:'AEO — Google AI',camp:'Campañas',geo:'AEO · GEO — IAs',meta:'Meta Ads',rec:'✦ Recomendaciones'};
   document.getElementById('t-sec').textContent=t[n]||n;
   if(!S.token){showAuth();return;}
-  if(!S.url){alert('Selecciona un cliente del sidebar.');return;}
+  if(!S.id){alert('Selecciona un cliente del sidebar.');return;}
   showSc('sc-'+n);
   if(n==='aeo')loadAEO();
   if(n==='camp')loadCamp();
@@ -658,7 +658,7 @@ function showAuth(){setConn(false);showSc('sc-auth');}
 function renderCL(){
   const list=clients(),el=document.getElementById('clist');
   if(!list.length){el.innerHTML=`<div style="padding:8px 16px;font-size:11px;color:var(--gray-400);font-family:'DM Mono',monospace">Sin clientes.<br>Usa + para agregar.</div>`;return;}
-  el.innerHTML=list.map(c=>`<div class="ci ${S.id===c.id?'active':''}" onclick="pickClient('${c.id}')"><div class="ci-av">${c.name[0].toUpperCase()}</div><div class="ci-info"><div class="ci-nm">${c.name}</div><div class="ci-url">${c.url.replace(/https?:\/\//,'').replace(/\/$/,'')}</div></div><button class="ci-del" onclick="editClient(event,'${c.id}')" title="Editar" style="font-size:12px">✎</button><button class="ci-del" onclick="delC(event,'${c.id}')" title="Eliminar">×</button></div>`).join('');
+  el.innerHTML=list.map(c=>`<div class="ci ${S.id===c.id?'active':''}" onclick="pickClient('${c.id}')"><div class="ci-av">${c.name[0].toUpperCase()}</div><div class="ci-info"><div class="ci-nm">${c.name}</div><div class="ci-url">${c.url?c.url.replace(/https?:\/\//,'').replace(/\/$/,''):'Sin GSC'}</div></div><button class="ci-del" onclick="editClient(event,'${c.id}')" title="Editar" style="font-size:12px">✎</button><button class="ci-del" onclick="delC(event,'${c.id}')" title="Eliminar">×</button></div>`).join('');
 }
 
 let S_editId=null;
@@ -704,8 +704,9 @@ async function fillSiteSelect(selectedUrl){
     const res=await fetch('https://www.googleapis.com/webmasters/v3/sites',{headers:{Authorization:`Bearer ${S.token}`}});
     const data=await res.json();
     const sites=(data.siteEntry||[]).sort((a,b)=>a.siteUrl.localeCompare(b.siteUrl));
-    sel.innerHTML=sites.length?sites.map(s=>`<option value="${s.siteUrl}">${s.siteUrl}</option>`).join(''):'<option value="">Sin propiedades</option>';
-    if(selectedUrl)sel.value=selectedUrl;
+    const opts='<option value="">— Sin propiedad GSC (solo Ads/Meta) —</option>'+(sites.length?sites.map(s=>`<option value="${s.siteUrl}">${s.siteUrl}</option>`).join(''):'');
+    sel.innerHTML=opts;
+    sel.value=selectedUrl||'';
   }catch(e){sel.innerHTML='<option value="">Error al cargar</option>';}
 }
 function closeModal(id){document.getElementById(id).classList.add('hidden');}
@@ -716,9 +717,10 @@ function saveClient(){
   const meta=document.getElementById('m-meta').value.trim().replace(/^act_/,'');
   const fbpage=document.getElementById('m-fbpage').value.trim();
   const igpage=document.getElementById('m-igpage').value.trim();
-  if(!nm||!url){const e=document.getElementById('m-err');e.textContent='⚠ Completa nombre y propiedad.';e.classList.add('on');return;}
   const services=SERVICES.filter(s=>document.getElementById('m-svc-'+s.key).checked).map(s=>s.key);
+  if(!nm){const e=document.getElementById('m-err');e.textContent='⚠ Completa el nombre.';e.classList.add('on');return;}
   if(!services.length){const e=document.getElementById('m-err');e.textContent='⚠ Selecciona al menos un servicio contratado.';e.classList.add('on');return;}
+  if(services.includes('seo')&&!url){const e=document.getElementById('m-err');e.textContent='⚠ El servicio SEO · AEO · GEO requiere elegir una propiedad GSC.';e.classList.add('on');return;}
   const igfollowers=document.getElementById('m-igfollowers')?.value.trim();
   const list=clients();
   const data={name:nm,url,ga4:ga4||null,meta:meta||null,fbpage:fbpage||null,igpage:igpage||null,igfollowers:igfollowers?parseInt(igfollowers):null,services};
@@ -793,8 +795,9 @@ function handleExpiredToken(){sessionStorage.removeItem('bb_t');S.token=null;set
 
 // ─── SEO ─────────────────────────────────────────────────────────────────────
 async function loadSEO(){
-  if(!S.token||!S.url)return;
+  if(!S.token||!S.id)return;
   if(!hasService('seo')){document.getElementById('seo-no-service').style.display='block';document.getElementById('seo-body').style.display='none';return;}
+  if(!S.url)return;
   document.getElementById('seo-no-service').style.display='none';document.getElementById('seo-body').style.display='';
   ['k-cl','k-im','k-ct','k-po'].forEach(i=>{document.getElementById(i).textContent='···';document.getElementById(i+'-d').innerHTML='';});
   document.getElementById('seo-t').textContent=S.name;
@@ -836,8 +839,9 @@ async function loadKW(){
 
 // ─── AEO ─────────────────────────────────────────────────────────────────────
 async function loadAEO(){
-  if(!S.token||!S.url)return;
+  if(!S.token||!S.id)return;
   if(!hasService('seo')){document.getElementById('aeo-no-service').style.display='block';document.getElementById('aeo-body').style.display='none';return;}
+  if(!S.url)return;
   document.getElementById('aeo-no-service').style.display='none';document.getElementById('aeo-body').style.display='';
   document.getElementById('aeo-s').textContent=`${S.name} · últimos ${S.days} días`;
   document.getElementById('aeo-conv-body').innerHTML='<div class="empty">Cargando…</div>';
