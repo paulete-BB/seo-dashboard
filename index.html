@@ -1146,7 +1146,7 @@ async function loadMeta(){
     const fbPageId = client.fbpage || null;
     const igPageId = client.igpage || null;
     const socialPromises = [
-      fbPageId ? metaFetch(`/${fbPageId}`, {fields:'fan_count,name'}).catch(()=>null) : Promise.resolve(null),
+      fbPageId ? metaFetch(`/${fbPageId}`, {fields:'followers_count,fan_count,name'}).catch(()=>null) : Promise.resolve(null),
       fbPageId ? metaFetch(`/${fbPageId}`, {fields:'instagram_business_account{followers_count,username}'}).catch(()=>null) : Promise.resolve(null),
     ];
 
@@ -1227,9 +1227,10 @@ async function loadMeta(){
     // ── Social stats ────────────────────────────────────────────────────────
     document.getElementById('meta-social').style.display='grid';
 
-    // Facebook followers
-    if(fbData && fbData.fan_count != null){
-      document.getElementById('meta-fb-followers').textContent = fN(fbData.fan_count) + ' seguidores';
+    // Facebook followers (followers_count = "seguidores" público; fan_count = "me gusta", métrica antigua)
+    const fbFollowers = fbData?.followers_count ?? fbData?.fan_count;
+    if(fbData && fbFollowers != null){
+      document.getElementById('meta-fb-followers').textContent = fN(fbFollowers) + ' seguidores';
       document.getElementById('meta-fb-delta').innerHTML = '<span style="color:var(--gray-400)">@' + (fbData.name||'') + '</span>';
     } else {
       document.getElementById('meta-fb-row').style.opacity = '0.4';
