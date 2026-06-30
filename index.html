@@ -319,8 +319,8 @@ body { font-family: 'DM Sans', sans-serif; background: #f5f5f3; color: #111; min
   <!-- MODAL AGREGAR CLIENTE -->
   <div class="overlay hidden" id="mod-add" onclick="if(event.target===this)closeModal('mod-add')">
     <div class="modal">
-      <div class="mt">Agregar cliente</div>
-      <div class="ms">Selecciona la propiedad directamente desde tu GSC — sin escribir URLs a mano.</div>
+      <div class="mt" id="m-title">Agregar cliente</div>
+      <div class="ms" id="m-sub">Selecciona la propiedad directamente desde tu GSC — sin escribir URLs a mano.</div>
       <div class="fl"><label class="fl-l">Nombre</label><input class="fi" type="text" id="m-nm" placeholder="Ej: Filtrocentro"/></div>
       <div class="fl"><label class="fl-l">Propiedad GSC</label><select class="fsel" id="m-site"><option>Cargando propiedades…</option></select></div>
       <div class="fl"><label class="fl-l">GA4 Property ID <span style="color:var(--gray-400)">(opcional)</span></label><input class="fi" type="text" id="m-ga4" placeholder="Ej: 123456789"/></div>
@@ -633,24 +633,51 @@ function showAuth(){setConn(false);showSc('sc-auth');}
 function renderCL(){
   const list=clients(),el=document.getElementById('clist');
   if(!list.length){el.innerHTML=`<div style="padding:8px 16px;font-size:11px;color:var(--gray-400);font-family:'DM Mono',monospace">Sin clientes.<br>Usa + para agregar.</div>`;return;}
-  el.innerHTML=list.map(c=>`<div class="ci ${S.id===c.id?'active':''}" onclick="pickClient('${c.id}')"><div class="ci-av">${c.name[0].toUpperCase()}</div><div class="ci-info"><div class="ci-nm">${c.name}</div><div class="ci-url">${c.url.replace(/https?:\/\//,'').replace(/\/$/,'')}</div></div><button class="ci-del" onclick="delC(event,'${c.id}')">×</button></div>`).join('');
+  el.innerHTML=list.map(c=>`<div class="ci ${S.id===c.id?'active':''}" onclick="pickClient('${c.id}')"><div class="ci-av">${c.name[0].toUpperCase()}</div><div class="ci-info"><div class="ci-nm">${c.name}</div><div class="ci-url">${c.url.replace(/https?:\/\//,'').replace(/\/$/,'')}</div></div><button class="ci-del" onclick="editClient(event,'${c.id}')" title="Editar" style="font-size:12px">✎</button><button class="ci-del" onclick="delC(event,'${c.id}')" title="Eliminar">×</button></div>`).join('');
 }
 
+let S_editId=null;
 async function openAdd(){
+  S_editId=null;
   if(!S.token){doOAuth();return;}
+  document.getElementById('m-title').textContent='Agregar cliente';
+  document.getElementById('m-sub').textContent='Selecciona la propiedad directamente desde tu GSC — sin escribir URLs a mano.';
   document.getElementById('m-err').classList.remove('on');
   document.getElementById('m-nm').value='';
   document.getElementById('m-ga4').value='';
+  document.getElementById('m-meta').value='';
   if(document.getElementById('m-fbpage'))document.getElementById('m-fbpage').value='';
   if(document.getElementById('m-igpage'))document.getElementById('m-igpage').value='';
+  if(document.getElementById('m-igfollowers'))document.getElementById('m-igfollowers').value='';
+  await fillSiteSelect();
+  document.getElementById('mod-add').classList.remove('hidden');
+}
+async function editClient(e,id){
+  e.stopPropagation();
+  if(!S.token){doOAuth();return;}
+  const c=clients().find(x=>x.id===id);if(!c)return;
+  S_editId=id;
+  document.getElementById('m-title').textContent='Editar cliente';
+  document.getElementById('m-sub').textContent='Actualiza los datos del cliente, incluidos los IDs de Meta Ads.';
+  document.getElementById('m-err').classList.remove('on');
+  document.getElementById('m-nm').value=c.name||'';
+  document.getElementById('m-ga4').value=c.ga4||'';
+  document.getElementById('m-meta').value=c.meta||'';
+  if(document.getElementById('m-fbpage'))document.getElementById('m-fbpage').value=c.fbpage||'';
+  if(document.getElementById('m-igpage'))document.getElementById('m-igpage').value=c.igpage||'';
+  if(document.getElementById('m-igfollowers'))document.getElementById('m-igfollowers').value=c.igfollowers||'';
+  document.getElementById('mod-add').classList.remove('hidden');
+  await fillSiteSelect(c.url);
+}
+async function fillSiteSelect(selectedUrl){
   const sel=document.getElementById('m-site');
   sel.innerHTML='<option>Cargando propiedades…</option>';
-  document.getElementById('mod-add').classList.remove('hidden');
   try{
     const res=await fetch('https://www.googleapis.com/webmasters/v3/sites',{headers:{Authorization:`Bearer ${S.token}`}});
     const data=await res.json();
     const sites=(data.siteEntry||[]).sort((a,b)=>a.siteUrl.localeCompare(b.siteUrl));
     sel.innerHTML=sites.length?sites.map(s=>`<option value="${s.siteUrl}">${s.siteUrl}</option>`).join(''):'<option value="">Sin propiedades</option>';
+    if(selectedUrl)sel.value=selectedUrl;
   }catch(e){sel.innerHTML='<option value="">Error al cargar</option>';}
 }
 function closeModal(id){document.getElementById(id).classList.add('hidden');}
@@ -663,7 +690,14 @@ function saveClient(){
   const igpage=document.getElementById('m-igpage').value.trim();
   if(!nm||!url){const e=document.getElementById('m-err');e.textContent='⚠ Completa nombre y propiedad.';e.classList.add('on');return;}
   const igfollowers=document.getElementById('m-igfollowers')?.value.trim();
-  const list=clients();list.push({id:Date.now().toString(),name:nm,url,ga4:ga4||null,meta:meta||null,fbpage:fbpage||null,igpage:igpage||null,igfollowers:igfollowers?parseInt(igfollowers):null});
+  const list=clients();
+  const data={name:nm,url,ga4:ga4||null,meta:meta||null,fbpage:fbpage||null,igpage:igpage||null,igfollowers:igfollowers?parseInt(igfollowers):null};
+  if(S_editId){
+    const idx=list.findIndex(c=>c.id===S_editId);
+    if(idx>-1){list[idx]={...list[idx],...data};if(S.id===S_editId){S.url=url;S.name=nm;}}
+  }else{
+    list.push({id:Date.now().toString(),...data});
+  }
   ls.s('bb_cl',list);closeModal('mod-add');renderCL();
 }
 function delC(e,id){e.stopPropagation();if(!confirm('¿Eliminar cliente?'))return;ls.s('bb_cl',clients().filter(c=>c.id!==id));if(S.id===id){S.id=null;S.url=null;S.name='';}renderCL();}
@@ -1210,176 +1244,5 @@ async function loadMeta(){
 
 
 </script>
-
-</head>
-<body>
-<div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
-<div class="shell">
-
-  
-
-  <!-- MODAL AGREGAR CLIENTE -->
-  <div class="overlay hidden" id="mod-add" onclick="if(event.target===this)closeModal('mod-add')">
-    <div class="modal">
-      <div class="mt">Agregar cliente</div>
-      <div class="ms">Selecciona la propiedad directamente desde tu GSC — sin escribir URLs a mano.</div>
-      <div class="fl"><label class="fl-l">Nombre</label><input class="fi" type="text" id="m-nm" placeholder="Ej: Filtrocentro"/></div>
-      <div class="fl"><label class="fl-l">Propiedad GSC</label><select class="fsel" id="m-site"><option>Cargando propiedades…</option></select></div>
-      <div class="fl"><label class="fl-l">GA4 Property ID <span style="color:var(--gray-400)">(opcional)</span></label><input class="fi" type="text" id="m-ga4" placeholder="Ej: 123456789"/></div>
-      <div class="fl"><label class="fl-l">Meta Ad Account ID <span style="color:var(--gray-400)">(opcional)</span></label><input class="fi" type="text" id="m-meta" placeholder="Ej: 496715465693373"/></div>
-      <div class="fl"><label class="fl-l">Facebook Page ID <span style="color:var(--gray-400)">(opcional)</span></label><input class="fi" type="text" id="m-fbpage" placeholder="Ej: 111180974351659"/></div>
-      <div class="fl"><label class="fl-l">Instagram Account ID <span style="color:var(--gray-400)">(opcional)</span></label><input class="fi" type="text" id="m-igpage" placeholder="Ej: 17841454448873700"/></div>
-      <div class="fl"><label class="fl-l">Seguidores Instagram <span style="color:var(--gray-400)">(manual, opcional)</span></label><input class="fi" type="number" id="m-igfollowers" placeholder="Ej: 1250"/></div>
-      <div class="errmsg" id="m-err"></div>
-      <div class="mact"><button class="bg" onclick="closeModal('mod-add')">Cancelar</button><button class="btn bb" style="width:auto" onclick="saveClient()">Guardar</button></div>
-    </div>
-  </div>
-
-  <!-- MODAL GEO -->
-  <div class="overlay hidden" id="mod-geo" onclick="if(event.target===this)closeModal('mod-geo')">
-    <div class="modal">
-      <div class="mt">Visibilidad en IAs</div>
-      <div class="ms" id="geo-ms">Ingresa el % de menciones para cada plataforma (0–100).</div>
-      <div class="msec">% de visibilidad</div>
-      <div id="geo-ed"></div>
-      <div class="mact"><button class="bg" onclick="closeModal('mod-geo')">Cancelar</button><button class="btn bb" style="width:auto" onclick="saveGEO()">Guardar</button></div>
-    </div>
-  </div>
-
-  <div class="main">
-    <div class="topbar">
-      <button class="hamburger" onclick="toggleSidebar()" aria-label="Menu"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
-      <div class="tl"><span class="tc" id="t-ag">Bigbuda</span><span class="tc">›</span><span class="tt" id="t-sec">Dashboard SEO</span></div>
-      <div class="tr">
-        <span class="td" id="t-dt"></span>
-        <div class="pill ok" id="t-pill"><span class="pdot"></span><span id="t-st">Conectado</span></div>
-        <button class="brs" onclick="takePolaroid()" id="btn-polaroid" style="display:none">📷 Tomar una Polaroid</button>
-      </div>
-    </div>
-    <div class="content">
-      <div id="pdf-header"><div class="pdf-logo" id="pdf-logo">Bigbuda</div><div class="pdf-meta" id="pdf-meta"></div><div class="pdf-stamp">📷 Polaroid · Bigbuda · bigbuda.com</div></div>
-
-      <!-- AUTH -->
-      <div class="screen" id="sc-auth">
-        <div class="auth-wrap">
-          <div class="ae">Google Search Console</div>
-          <h1 class="ah">Conectar cuenta</h1>
-          <p class="ap">Autentica con Google para acceder a todas tus propiedades GSC y análisis con Claude AI.</p>
-          <div class="card">
-            <button class="btn bo" onclick="doOAuth()">
-              <svg width="14" height="14" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20H24v8h11.3C33.6 33.1 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.1 8 3l5.7-5.7C34.5 6.5 29.5 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20c11 0 19.7-8 19.7-20 0-1.3-.1-2.7-.4-4z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 16 19 13 24 13c3.1 0 5.9 1.1 8 3l5.7-5.7C34.5 6.5 29.5 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-1.9 13.5-5l-6.2-5.2C29.4 35.6 26.8 36 24 36c-5.1 0-9.5-2.9-11.2-7l-6.5 5C9.8 40 16.4 44 24 44z"/><path fill="#1976D2" d="M43.6 20H24v8h11.3c-.9 2.4-2.5 4.4-4.6 5.8l6.2 5.2C40.9 35.4 44 30.1 44 24c0-1.3-.1-2.7-.4-4z"/></svg>
-              Iniciar con Google OAuth
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- SEO -->
-      <div class="screen on" id="sc-seo">
-        <div class="ph">
-          <div><div class="ph-t" id="seo-t">Dashboard SEO</div><div class="ph-s" id="seo-s">—</div></div>
-          <div class="rtabs"><button class="rtab on" onclick="setRange(14,this)">14d</button><button class="rtab" onclick="setRange(28,this)">28d</button><button class="rtab" onclick="setRange(90,this)">90d</button></div>
-        </div>
-        <div class="kpis">
-          <div class="kpi hi"><div class="kl">Clics totales</div><div class="kv" id="k-cl">—</div><div class="kd" id="k-cl-d"></div></div>
-          <div class="kpi"><div class="kl">Impresiones</div><div class="kv" id="k-im">—</div><div class="kd" id="k-im-d"></div></div>
-          <div class="kpi"><div class="kl">CTR promedio</div><div class="kv" id="k-ct">—</div><div class="kd" id="k-ct-d"></div></div>
-          <div class="kpi"><div class="kl">Posición media</div><div class="kv" id="k-po">—</div><div class="kd" id="k-po-d"></div></div>
-        </div>
-        <div class="g2" style="margin-bottom:10px;">
-          <div class="panel"><div class="ph2"><span class="pt">Clics e impresiones</span><span class="ptag tg">GSC live</span></div><div class="pb2"><div class="cw"><canvas id="ch-tl"></canvas></div></div></div>
-          <div class="panel"><div class="ph2"><span class="pt">Distribución de posiciones</span><span class="ptag tl2">GSC</span></div><div class="pb2"><div class="cw" style="height:180px"><canvas id="ch-pos"></canvas></div></div></div>
-        </div>
-        <div class="g2">
-          <div class="panel"><div class="ph2"><span class="pt">Top keywords</span><span class="ptag tl2">Live</span></div><div class="pb2" style="padding:0 16px 12px"><table class="kwt"><thead><tr><th>Keyword</th><th>Pos.</th><th>Clics</th><th>CTR</th><th>Δ</th></tr></thead><tbody id="kw-body"></tbody></table></div></div>
-          <div class="panel"><div class="ph2"><span class="pt">CTR por query</span><span class="ptag tg">GSC</span></div><div class="pb2"><div id="ctr-body"></div></div></div>
-        </div>
-      </div>
-
-
-      <!-- RECOMENDACIONES -->
-      <div class="screen" id="sc-rec">
-        <div class="ph">
-          <div><div class="ph-t">✦ Recomendaciones</div><div class="ph-s" id="rec-s">Análisis con Claude AI</div></div>
-          <button class="brs" id="rec-btn" onclick="loadRec(true)">✦ Analizar con Claude AI</button>
-        </div>
-        <div id="rec-loading" class="infobox info" style="display:none"><div class="spin-row"><span class="spinner"></span><span id="rec-loading-txt">Analizando…</span></div></div>
-        <div id="rec-error" class="infobox warn" style="display:none"></div>
-        <div id="rec-empty" class="infobox">Selecciona un cliente y haz clic en "Analizar con Claude AI".</div>
-        <div id="rec-content" style="display:none">
-          <div class="rec-summary" id="rec-summary-box" style="display:none"><div class="rec-summary-t">✦ Resumen ejecutivo</div><div id="rec-summary-txt"></div></div>
-          <div class="rec-area"><div class="rec-area-title">SEO</div><div id="rec-seo-items"></div></div>
-          <div class="rec-area"><div class="rec-area-title">AEO · Posicionamiento en IAs</div><div id="rec-aeo-items"></div></div>
-          <div class="rec-area"><div class="rec-area-title">Campañas</div><div id="rec-camp-items"></div></div>
-        </div>
-      </div>
-
-      <!-- AEO -->
-      <div class="screen" id="sc-aeo">
-        <div class="ph">
-          <div><div class="ph-t">AEO — Google AI</div><div class="ph-s" id="aeo-s">Queries conversacionales</div></div>
-          <div class="rtabs"><button class="rtab on" onclick="setRange(14,this);loadAEO()">14d</button><button class="rtab" onclick="setRange(28,this);loadAEO()">28d</button><button class="rtab" onclick="setRange(90,this);loadAEO()">90d</button></div>
-        </div>
-        <div class="panel">
-          <div class="ph2"><span class="pt">Queries conversacionales (proxy AI Overviews)</span><span class="ptag ta">Heurística GSC</span></div>
-          <div class="pb2" style="padding:0 16px 14px">
-            <div class="infobox" style="margin-bottom:10px;margin-top:8px">Queries de 5+ palabras o con intención informacional — los que con mayor frecuencia disparan AI Overviews.</div>
-            <div id="aeo-conv-body"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- CAMPAÑAS -->
-      <div class="screen" id="sc-camp">
-        <div class="ph">
-          <div><div class="ph-t">Campañas</div><div class="ph-s" id="camp-s">Resultados desde GA4</div></div>
-          <div class="rtabs"><button class="rtab on" onclick="setRange(14,this);loadCamp()">14d</button><button class="rtab" onclick="setRange(28,this);loadCamp()">28d</button><button class="rtab" onclick="setRange(90,this);loadCamp()">90d</button></div>
-        </div>
-        <div id="camp-no-ga4" class="infobox warn" style="display:none">⚠ Este cliente no tiene GA4 configurado.</div>
-        <div id="camp-loading" class="infobox info" style="display:none"><div class="spin-row"><span class="spinner"></span>Cargando campañas…</div></div>
-        <div id="camp-error" class="infobox warn" style="display:none"></div>
-        <div class="kpis" id="camp-kpis" style="display:none">
-          <div class="kpi hi"><div class="kl">Sesiones pagas</div><div class="kv" id="camp-k-sess">—</div><div class="kd" id="camp-k-sess-d"></div></div>
-          <div class="kpi"><div class="kl">Conversiones</div><div class="kv" id="camp-k-conv">—</div><div class="kd" id="camp-k-conv-d"></div></div>
-          <div class="kpi"><div class="kl">Costo / conversión</div><div class="kv" id="camp-k-cpc">—</div><div class="kd"></div></div>
-          <div class="kpi"><div class="kl">T. sesión promedio</div><div class="kv" id="camp-k-dur">—</div><div class="kd"></div></div>
-        </div>
-        <div class="g2" id="camp-main" style="display:none;margin-top:10px">
-          <div class="panel"><div class="ph2"><span class="pt">Resultados por campaña</span><span class="ptag tp">GA4 · Ads</span></div><div class="pb2" style="padding:0 16px 12px"><table class="ga4t"><thead><tr><th>Campaña</th><th>Sesiones</th><th>Conversiones</th><th>Costo/conv.</th><th>T. sesión</th></tr></thead><tbody id="camp-tbody"></tbody></table></div></div>
-          <div class="panel"><div class="ph2"><span class="pt">Sesiones vs conversiones</span><span class="ptag tp">GA4</span></div><div class="pb2"><div class="cw"><canvas id="ch-camp"></canvas></div></div></div>
-        </div>
-        <div class="panel" id="camp-tl-panel" style="display:none;margin-top:10px">
-          <div class="ph2"><span class="pt">Tendencia diaria</span><span class="ptag tp">GA4</span></div>
-          <div class="pb2"><div class="cw"><canvas id="ch-camp-tl"></canvas></div></div>
-        </div>
-      </div>
-
-      <!-- AEO·GEO -->
-      <div class="screen" id="sc-geo">
-        <div class="ph">
-          <div><div class="ph-t">AEO · GEO</div><div class="ph-s" id="geo-s">Visibilidad y tráfico desde IAs</div></div>
-          <div style="display:flex;gap:8px;align-items:center;">
-            <button class="brs" id="geo-ga4-btn" onclick="loadGA4GEO()" style="display:none">↺ Actualizar</button>
-            <div class="rtabs"><button class="rtab on" onclick="setRangeGeo(14,this)">14d</button><button class="rtab" onclick="setRangeGeo(28,this)">28d</button><button class="rtab" onclick="setRangeGeo(90,this)">90d</button></div>
-          </div>
-        </div>
-        <div class="geo-kpis" id="geo-kpis" style="display:none">
-          <div class="kpi"><div class="kl">Sesiones desde IAs</div><div class="kv" id="geo-k-sess">—</div><div class="kd" id="geo-k-sess-d"></div></div>
-          <div class="kpi hi"><div class="kl">Usuarios desde IAs</div><div class="kv" id="geo-k-usr">—</div><div class="kd" id="geo-k-usr-d"></div></div>
-          <div class="kpi"><div class="kl">Conversiones IA</div><div class="kv" id="geo-k-conv">—</div><div class="kd" id="geo-k-conv-d"></div></div>
-        </div>
-        <div class="g2" id="geo-ga4-section" style="display:none">
-          <div class="panel"><div class="ph2"><span class="pt">Tráfico referido por IA</span><span class="ptag tp">GA4 live</span></div><div class="pb2" style="padding:0 16px 12px"><table class="ga4t"><thead><tr><th>Fuente IA</th><th>Sesiones</th><th>Usuarios</th><th>Conversiones</th><th>T. sesión</th></tr></thead><tbody id="geo-ga4-body"></tbody></table></div></div>
-          <div class="panel"><div class="ph2"><span class="pt">Sesiones por fuente IA</span><span class="ptag tp">GA4</span></div><div class="pb2"><div class="cw"><canvas id="ch-geo-traffic"></canvas></div></div></div>
-        </div>
-        <div id="geo-no-ga4" class="infobox warn" style="display:none">⚠ Sin GA4 configurado — agrega el Property ID al editar este cliente.</div>
-        <div id="geo-ga4-loading" style="display:none" class="infobox info"><div class="spin-row"><span class="spinner"></span>Cargando datos GA4…</div></div>
-        <div id="geo-ga4-error" class="infobox warn" style="display:none"></div>
-      </div>
-    </div>
-  </div>
-</div>
-
-
 </body>
 </html>
