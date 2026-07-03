@@ -337,6 +337,7 @@ body { font-family: 'DM Sans', sans-serif; background: #f5f5f3; color: #111; min
       <div class="fl"><label class="fl-l">Meta Ad Account ID <span style="color:var(--gray-400)">(opcional)</span></label><input class="fi" type="text" id="m-meta" placeholder="Ej: 496715465693373"/></div>
       <div class="fl"><label class="fl-l">Facebook Page ID <span style="color:var(--gray-400)">(opcional)</span></label><input class="fi" type="text" id="m-fbpage" placeholder="Ej: 111180974351659"/></div>
       <div class="fl"><label class="fl-l">Instagram Account ID <span style="color:var(--gray-400)">(opcional)</span></label><input class="fi" type="text" id="m-igpage" placeholder="Ej: 17841454448873700"/></div>
+      <div class="fl"><label class="fl-l">Meta Token Key <span style="color:var(--gray-400)">(opcional, solo si este cliente usa un token de Meta distinto al de Bigbuda — ej: PISOURBANO)</span></label><input class="fi" type="text" id="m-metatoken" placeholder="Dejar vacío para usar el token por defecto" style="text-transform:uppercase"/></div>
       <div class="fl"><label class="fl-l">Seguidores Instagram <span style="color:var(--gray-400)">(manual, opcional)</span></label><input class="fi" type="number" id="m-igfollowers" placeholder="Ej: 1250"/></div>
       <div class="errmsg" id="m-err"></div>
       <div class="mact"><button class="bg" onclick="closeModal('mod-add')">Cancelar</button><button class="btn bb" style="width:auto" onclick="saveClient()">Guardar</button></div>
@@ -674,6 +675,7 @@ async function openAdd(){
   if(document.getElementById('m-fbpage'))document.getElementById('m-fbpage').value='';
   if(document.getElementById('m-igpage'))document.getElementById('m-igpage').value='';
   if(document.getElementById('m-igfollowers'))document.getElementById('m-igfollowers').value='';
+  if(document.getElementById('m-metatoken'))document.getElementById('m-metatoken').value='';
   SERVICES.forEach(s=>document.getElementById('m-svc-'+s.key).checked=false);
   await fillSiteSelect();
   document.getElementById('mod-add').classList.remove('hidden');
@@ -692,6 +694,7 @@ async function editClient(e,id){
   if(document.getElementById('m-fbpage'))document.getElementById('m-fbpage').value=c.fbpage||'';
   if(document.getElementById('m-igpage'))document.getElementById('m-igpage').value=c.igpage||'';
   if(document.getElementById('m-igfollowers'))document.getElementById('m-igfollowers').value=c.igfollowers||'';
+  if(document.getElementById('m-metatoken'))document.getElementById('m-metatoken').value=c.metaTokenKey||'';
   const svc=c.services||SERVICES.map(s=>s.key);
   SERVICES.forEach(s=>document.getElementById('m-svc-'+s.key).checked=svc.includes(s.key));
   document.getElementById('mod-add').classList.remove('hidden');
@@ -722,8 +725,9 @@ function saveClient(){
   if(!services.length){const e=document.getElementById('m-err');e.textContent='⚠ Selecciona al menos un servicio contratado.';e.classList.add('on');return;}
   if(services.includes('seo')&&!url){const e=document.getElementById('m-err');e.textContent='⚠ El servicio SEO · AEO · GEO requiere elegir una propiedad GSC.';e.classList.add('on');return;}
   const igfollowers=document.getElementById('m-igfollowers')?.value.trim();
+  const metaTokenKey=document.getElementById('m-metatoken')?.value.trim().toUpperCase().replace(/[^A-Z0-9_]/g,'');
   const list=clients();
-  const data={name:nm,url,ga4:ga4||null,meta:meta||null,fbpage:fbpage||null,igpage:igpage||null,igfollowers:igfollowers?parseInt(igfollowers):null,services};
+  const data={name:nm,url,ga4:ga4||null,meta:meta||null,fbpage:fbpage||null,igpage:igpage||null,igfollowers:igfollowers?parseInt(igfollowers):null,services,metaTokenKey:metaTokenKey||null};
   if(S_editId){
     const idx=list.findIndex(c=>c.id===S_editId);
     if(idx>-1){list[idx]={...list[idx],...data};if(S.id===S_editId){S.url=url;S.name=nm;}}
@@ -1087,11 +1091,13 @@ function setRangeMeta(d, btn){
   loadMeta();
 }
 
-async function metaFetch(endpoint, params={}){
+async function metaFetch(endpoint, params={}, tokenKey){
+  const body = { service:'meta', endpoint, params };
+  if(tokenKey) body.tokenKey = tokenKey;
   const res = await fetch('https://claude-proxy.paulete.workers.dev', {
     method: 'POST',
     headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ service:'meta', endpoint, params })
+    body: JSON.stringify(body)
   });
   if(!res.ok) throw new Error(`Worker ${res.status}`);
   const data = await res.json();
@@ -1145,32 +1151,33 @@ async function loadMeta(){
     // Social pages
     const fbPageId = client.fbpage || null;
     const igPageId = client.igpage || null;
+    const tokenKey = client.metaTokenKey || undefined;
     const socialPromises = [
-      fbPageId ? metaFetch(`/${fbPageId}`, {fields:'followers_count,fan_count,name'}).catch(()=>null) : Promise.resolve(null),
-      fbPageId ? metaFetch(`/${fbPageId}`, {fields:'instagram_business_account{followers_count,username}'}).catch(()=>null) : Promise.resolve(null),
+      fbPageId ? metaFetch(`/${fbPageId}`, {fields:'followers_count,fan_count,name'}, tokenKey).catch(()=>null) : Promise.resolve(null),
+      fbPageId ? metaFetch(`/${fbPageId}`, {fields:'instagram_business_account{followers_count,username}'}, tokenKey).catch(()=>null) : Promise.resolve(null),
     ];
 
     const [summary, summaryPrev, campaigns, daily, fbData, igData] = await Promise.all([
       // Current period summary
       metaFetch(`/act_${accId}/insights`, {
         fields, time_range: timeRange(curr), level:'account'
-      }),
+      }, tokenKey),
       // Previous period summary
       metaFetch(`/act_${accId}/insights`, {
         fields, time_range: timeRange(prevRange), level:'account'
-      }),
+      }, tokenKey),
       // By campaign
       metaFetch(`/act_${accId}/insights`, {
         fields: 'campaign_name,spend,impressions,clicks,ctr,cpc,actions',
         time_range: timeRange(curr), level:'campaign',
         sort:'spend_descending', limit:'20'
-      }),
+      }, tokenKey),
       // Daily breakdown for chart
       metaFetch(`/act_${accId}/insights`, {
         fields: 'spend,impressions,clicks',
         time_range: timeRange(curr),
         time_increment:'1', level:'account'
-      }),
+      }, tokenKey),
       ...socialPromises
     ]);
 
