@@ -1154,7 +1154,10 @@ async function loadMeta(){
     const tokenKey = client.metaTokenKey || undefined;
     const socialPromises = [
       fbPageId ? metaFetch(`/${fbPageId}`, {fields:'followers_count,fan_count,name'}, tokenKey).catch(()=>null) : Promise.resolve(null),
-      fbPageId ? metaFetch(`/${fbPageId}`, {fields:'instagram_business_account{followers_count,username}'}, tokenKey).catch(()=>null) : Promise.resolve(null),
+      // Preferimos consultar la cuenta de Instagram directamente por su ID (más confiable) en vez
+      // de depender de que Meta tenga la vinculación Página→IG resuelta correctamente.
+      igPageId ? metaFetch(`/${igPageId}`, {fields:'followers_count,username'}, tokenKey).catch(()=>null)
+        : fbPageId ? metaFetch(`/${fbPageId}`, {fields:'instagram_business_account{followers_count,username}'}, tokenKey).catch(()=>null) : Promise.resolve(null),
     ];
 
     const [summary, summaryPrev, campaigns, daily, fbData, igData] = await Promise.all([
@@ -1245,7 +1248,9 @@ async function loadMeta(){
     }
 
     // Instagram followers - API first, fallback to manual
-    const igAccount = igData?.instagram_business_account || igData?.connected_instagram_account;
+    // Si consultamos el ID de IG directamente, igData ya trae followers_count en su raíz;
+    // si vino de la Página (sin igPageId configurado), viene anidado.
+    const igAccount = (igData && igData.followers_count != null) ? igData : (igData?.instagram_business_account || igData?.connected_instagram_account);
     const manualIgFollowers = client.igfollowers || null;
     if(igAccount && igAccount.followers_count != null){
       document.getElementById('meta-ig-followers').textContent = fN(igAccount.followers_count) + ' seguidores';
