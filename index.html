@@ -121,7 +121,6 @@ body { font-family: 'DM Sans', sans-serif; background: #f5f5f3; color: #111; min
 .tl2{background:#f0fdf4;color:var(--success);border-color:#bbf7d0;}
 .ty{background:#fefce8;color:#ca8a04;border-color:#fde68a;}
 .cw{position:relative;width:100%;height:200px;}
-.chart-empty{position:absolute;inset:0;display:none;align-items:center;justify-content:center;text-align:center;padding:0 16px;color:var(--gray-400);font-family:'DM Mono',monospace;font-size:11px;}
 .kwt{width:100%;border-collapse:collapse;font-size:12px;}
 .kwt th{font-family:'DM Mono',monospace;font-size:10px;color:var(--gray-400);text-transform:uppercase;letter-spacing:.1em;padding:0 8px 7px;border-bottom:1px solid var(--border);text-align:left;font-weight:500;}
 .kwt td{padding:7px 8px;border-bottom:1px solid var(--gray-100);vertical-align:middle;}
@@ -227,6 +226,7 @@ body { font-family: 'DM Sans', sans-serif; background: #f5f5f3; color: #111; min
   #pdf-header{display:block !important;}
   .screen{display:block !important;margin-bottom:24px;break-inside:avoid-page;}
   .screen+.screen{break-before:page;page-break-before:always;}
+  .screen.print-first{break-before:auto !important;page-break-before:auto !important;}
   #sc-auth{display:none !important;}
   .kpis{grid-template-columns:repeat(4,1fr) !important;gap:6px !important;}
   .g2,.g3{grid-template-columns:1fr 1fr !important;gap:8px !important;}
@@ -237,10 +237,12 @@ body { font-family: 'DM Sans', sans-serif; background: #f5f5f3; color: #111; min
   .ph{margin-bottom:8px !important;border-top:2px solid #e8352a;padding-top:8px;break-after:avoid;page-break-after:avoid;}
   .topbar{display:none !important;}
 }
-#pdf-header{display:none;padding:0 0 16px 0;border-bottom:2px solid #e8352a;margin-bottom:20px;}
-#pdf-header .pdf-logo{font-size:18px;font-weight:700;color:#111;}
-#pdf-header .pdf-meta{font-size:11px;color:#888;font-family:'DM Mono',monospace;margin-top:2px;}
-#pdf-header .pdf-stamp{font-size:10px;color:#e8352a;font-family:'DM Mono',monospace;margin-top:6px;font-style:italic;}
+#pdf-header{display:none;padding:0 0 18px 0;border-bottom:3px solid #e8352a;margin-bottom:22px;}
+#pdf-header .pdf-top{display:flex;align-items:baseline;justify-content:space-between;gap:16px;}
+#pdf-header .pdf-logo{font-size:20px;font-weight:700;color:#111;letter-spacing:-.01em;}
+#pdf-header .pdf-date{font-size:10px;color:#999;font-family:'DM Mono',monospace;white-space:nowrap;}
+#pdf-header .pdf-meta{font-size:13px;color:#444;margin-top:4px;font-weight:500;}
+#pdf-header .pdf-stamp{font-size:10px;color:#999;font-family:'DM Mono',monospace;margin-top:8px;}
 
 
 /* ── RESPONSIVE MOBILE ────────────────────────────────────────────── */
@@ -369,7 +371,11 @@ body { font-family: 'DM Sans', sans-serif; background: #f5f5f3; color: #111; min
       </div>
     </div>
     <div class="content">
-      <div id="pdf-header"><div class="pdf-logo" id="pdf-logo">Bigbuda</div><div class="pdf-meta" id="pdf-meta"></div><div class="pdf-stamp">📷 Polaroid · Bigbuda · bigbuda.com</div></div>
+      <div id="pdf-header">
+        <div class="pdf-top"><div class="pdf-logo" id="pdf-logo">Bigbuda</div><div class="pdf-date" id="pdf-date"></div></div>
+        <div class="pdf-meta" id="pdf-meta"></div>
+        <div class="pdf-stamp">Bigbuda — Agencia de Marketing Digital · bigbuda.com</div>
+      </div>
 
       <!-- AUTH -->
       <div class="screen" id="sc-auth">
@@ -611,17 +617,8 @@ function dlt(c,p,low){if(c==null||!p)return'';const d=((c-p)/Math.abs(p))*100,a=
 function destroyC(){Object.values(S.charts).forEach(c=>{try{c.destroy();}catch(e){}});S.charts={};}
 function chartEmptyState(canvasId, hasData, msg){
   const canvas=document.getElementById(canvasId);
-  const wrap=canvas.closest('.cw');
-  let ph=wrap.querySelector('.chart-empty');
-  if(!hasData){
-    canvas.style.visibility='hidden';
-    if(!ph){ph=document.createElement('div');ph.className='chart-empty empty';wrap.appendChild(ph);}
-    ph.textContent=msg||'Sin datos suficientes en este período.';
-    ph.style.display='flex';
-  }else{
-    canvas.style.visibility='visible';
-    if(ph)ph.style.display='none';
-  }
+  const panel=canvas.closest('.panel')||canvas.closest('.cw');
+  panel.style.display = hasData ? '' : 'none';
   return hasData;
 }
 
@@ -818,8 +815,7 @@ function handleExpiredToken(){sessionStorage.removeItem('bb_t');S.token=null;set
 // ─── SEO ─────────────────────────────────────────────────────────────────────
 async function loadSEO(){
   if(!S.token||!S.id)return;
-  if(!hasService('seo')){document.getElementById('seo-no-service').style.display='block';document.getElementById('seo-body').style.display='none';return;}
-  if(!S.url)return;
+  if(!hasService('seo')||!S.url){document.getElementById('seo-no-service').style.display='block';document.getElementById('seo-body').style.display='none';return;}
   document.getElementById('seo-no-service').style.display='none';document.getElementById('seo-body').style.display='';
   ['k-cl','k-im','k-ct','k-po'].forEach(i=>{document.getElementById(i).textContent='···';document.getElementById(i+'-d').innerHTML='';});
   document.getElementById('seo-t').textContent=S.name;
@@ -864,8 +860,7 @@ async function loadKW(){
 // ─── AEO ─────────────────────────────────────────────────────────────────────
 async function loadAEO(){
   if(!S.token||!S.id)return;
-  if(!hasService('seo')){document.getElementById('aeo-no-service').style.display='block';document.getElementById('aeo-body').style.display='none';return;}
-  if(!S.url)return;
+  if(!hasService('seo')||!S.url){document.getElementById('aeo-no-service').style.display='block';document.getElementById('aeo-body').style.display='none';return;}
   document.getElementById('aeo-no-service').style.display='none';document.getElementById('aeo-body').style.display='';
   document.getElementById('aeo-s').textContent=`${S.name} · últimos ${S.days} días`;
   document.getElementById('aeo-conv-body').innerHTML='<div class="empty">Cargando…</div>';
@@ -930,7 +925,7 @@ async function loadCamp(){
 }
 
 // ─── GEO ─────────────────────────────────────────────────────────────────────
-function renderGEO(){
+async function renderGEO(){
   document.getElementById('geo-s').textContent=`${S.name} · últimos ${S.days} días`;
   if(!hasService('seo')){
     document.getElementById('geo-no-service').style.display='block';document.getElementById('geo-ga4-btn').style.display='none';
@@ -941,7 +936,7 @@ function renderGEO(){
   const c=clients().find(x=>x.id===S.id);
   const hasGA4=c&&c.ga4;
   document.getElementById('geo-ga4-btn').style.display=hasGA4?'':'none';
-  if(hasGA4){loadGA4GEO();}else{showNoGA4();}
+  if(hasGA4){await loadGA4GEO();}else{showNoGA4();}
 }
 function showNoGA4(){
   document.getElementById('geo-kpis').style.display='none';document.getElementById('geo-ga4-section').style.display='none';
@@ -1101,8 +1096,9 @@ async function takePolaroid(){
   if(btn){btn.disabled=true;btn.dataset.orig=btn.textContent;btn.textContent='⏳ Preparando reporte…';}
 
   const date=new Date().toLocaleDateString('es-CL',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-  document.getElementById('pdf-logo').textContent=S.name||'Bigbuda';
-  document.getElementById('pdf-meta').textContent=`Reporte SEO · AEO · GEO · Campañas — ${date} — ${S.days} días`;
+  document.getElementById('pdf-logo').textContent='Bigbuda';
+  document.getElementById('pdf-date').textContent=date;
+  document.getElementById('pdf-meta').textContent=`Reporte de resultados · ${S.name} — últimos ${S.days} días`;
 
   // Recarga cada sección con los datos ACTUALES del cliente seleccionado —
   // sin esto, el PDF mostraba lo último pintado en pantalla (a veces de otro cliente).
@@ -1120,16 +1116,15 @@ async function takePolaroid(){
     const blocked=sec.noBox.some(bid=>!isHidden(document.getElementById(bid)));
     if(!blocked) included.push('sc-'+sec.id);
   }
-  // Recomendaciones solo si ya se generó un análisis en esta sesión — no lo disparamos
-  // automáticamente (llamada a Claude AI con costo) ni mostramos el estado vacío en el PDF.
-  if(document.getElementById('rec-content')?.style.display!=='none') included.push('sc-rec');
+  // Recomendaciones es un espacio interno de la agencia — nunca va en el PDF para el cliente.
 
   // Reordena las secciones incluidas en un orden lógico para el reporte
   const contentEl=document.querySelector('.content');
   included.forEach(id=>{const el=document.getElementById(id); if(el) contentEl.appendChild(el);});
 
-  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on','print-first'));
   included.forEach(id=>document.getElementById(id)?.classList.add('on'));
+  document.getElementById(included[0])?.classList.add('print-first');
 
   if(btn){btn.disabled=false;btn.textContent=btn.dataset.orig||'📷 Tomar una Polaroid';}
 
@@ -1138,7 +1133,7 @@ async function takePolaroid(){
   window.print();
 
   setTimeout(()=>{
-    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on','print-first'));
     if(prevNav){const n=prevNav.replace('nv-','');goSec(n, document.getElementById(prevNav));}
     else showSc('sc-seo');
   }, 800);
