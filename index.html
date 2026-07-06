@@ -121,6 +121,7 @@ body { font-family: 'DM Sans', sans-serif; background: #f5f5f3; color: #111; min
 .tl2{background:#f0fdf4;color:var(--success);border-color:#bbf7d0;}
 .ty{background:#fefce8;color:#ca8a04;border-color:#fde68a;}
 .cw{position:relative;width:100%;height:200px;}
+.chart-empty{position:absolute;inset:0;display:none;align-items:center;justify-content:center;text-align:center;padding:0 16px;color:var(--gray-400);font-family:'DM Mono',monospace;font-size:11px;}
 .kwt{width:100%;border-collapse:collapse;font-size:12px;}
 .kwt th{font-family:'DM Mono',monospace;font-size:10px;color:var(--gray-400);text-transform:uppercase;letter-spacing:.1em;padding:0 8px 7px;border-bottom:1px solid var(--border);text-align:left;font-weight:500;}
 .kwt td{padding:7px 8px;border-bottom:1px solid var(--gray-100);vertical-align:middle;}
@@ -219,19 +220,21 @@ body { font-family: 'DM Sans', sans-serif; background: #f5f5f3; color: #111; min
 @media print {
   *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;}
   body{background:white !important;font-size:11px !important;}
-  .sidebar,.brs,.rtabs,#btn-polaroid{display:none !important;}
+  .sidebar,.brs,.rtabs,#btn-polaroid,.hamburger,.sidebar-overlay{display:none !important;}
   .main{margin-left:0 !important;}
   .shell{display:block !important;}
   .content{padding:0 !important;}
-  .screen{display:block !important;margin-bottom:24px;}
-  #sc-auth{display:none !important;}
   #pdf-header{display:block !important;}
+  .screen{display:block !important;margin-bottom:24px;break-inside:avoid-page;}
+  .screen+.screen{break-before:page;page-break-before:always;}
+  #sc-auth{display:none !important;}
   .kpis{grid-template-columns:repeat(4,1fr) !important;gap:6px !important;}
   .g2,.g3{grid-template-columns:1fr 1fr !important;gap:8px !important;}
   .geo-kpis{grid-template-columns:repeat(3,1fr) !important;}
-  .panel,.kpi{box-shadow:none !important;border:1px solid #e5e5e3 !important;}
+  .panel,.kpi,.kwt,.ga4t,.social-row,.rec-item,.infobox{box-shadow:none !important;border:1px solid #e5e5e3 !important;break-inside:avoid;page-break-inside:avoid;}
+  .kpis,.g2,.g3,.geo-kpis,.meta-kpis{break-inside:avoid;page-break-inside:avoid;}
   .cw{height:160px !important;}
-  .ph{margin-bottom:8px !important;border-top:2px solid #e8352a;padding-top:8px;}
+  .ph{margin-bottom:8px !important;border-top:2px solid #e8352a;padding-top:8px;break-after:avoid;page-break-after:avoid;}
   .topbar{display:none !important;}
 }
 #pdf-header{display:none;padding:0 0 16px 0;border-bottom:2px solid #e8352a;margin-bottom:20px;}
@@ -606,6 +609,21 @@ function fP(n){return n!=null?(n*100).toFixed(1)+'%':'—';}
 function fSec(s){if(!s||s===0)return'—';const m=Math.floor(s/60);const sec=Math.round(s%60);return m>0?`${m}m ${sec}s`:`${sec}s`;}
 function dlt(c,p,low){if(c==null||!p)return'';const d=((c-p)/Math.abs(p))*100,a=Math.abs(d).toFixed(1)+'%',g=low?d<0:d>0;return`<span class="${g?'up':'dn'}">${d>0?'▲':'▼'} ${a} vs per. ant.</span>`;}
 function destroyC(){Object.values(S.charts).forEach(c=>{try{c.destroy();}catch(e){}});S.charts={};}
+function chartEmptyState(canvasId, hasData, msg){
+  const canvas=document.getElementById(canvasId);
+  const wrap=canvas.closest('.cw');
+  let ph=wrap.querySelector('.chart-empty');
+  if(!hasData){
+    canvas.style.visibility='hidden';
+    if(!ph){ph=document.createElement('div');ph.className='chart-empty empty';wrap.appendChild(ph);}
+    ph.textContent=msg||'Sin datos suficientes en este período.';
+    ph.style.display='flex';
+  }else{
+    canvas.style.visibility='visible';
+    if(ph)ph.style.display='none';
+  }
+  return hasData;
+}
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 document.getElementById('t-dt').textContent=new Date().toLocaleDateString('es-CL',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
@@ -821,6 +839,7 @@ async function loadTL(){
   const d=await gscQ({startDate:ago(S.days+3),endDate:ago(3),dimensions:['date'],rowLimit:100});
   const rows=(d.rows||[]).sort((a,b)=>a.keys[0].localeCompare(b.keys[0]));
   if(S.charts.tl)try{S.charts.tl.destroy();}catch(e){}
+  chartEmptyState('ch-tl', rows.some(r=>r.clicks>0||r.impressions>0));
   S.charts.tl=new Chart(document.getElementById('ch-tl').getContext('2d'),{type:'line',data:{labels:rows.map(r=>r.keys[0].slice(5)),datasets:[{label:'Clics',data:rows.map(r=>r.clicks),borderColor:'#e8352a',backgroundColor:'rgba(232,53,42,0.06)',tension:.4,fill:true,pointRadius:0,borderWidth:2,yAxisID:'y'},{label:'Imp.',data:rows.map(r=>r.impressions),borderColor:'#bbb',backgroundColor:'rgba(0,0,0,0.02)',tension:.4,fill:true,pointRadius:0,borderWidth:1.5,borderDash:[4,3],yAxisID:'y1'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#888',font:{size:10},maxTicksLimit:8},grid:{color:'#f0f0ee'}},y:{display:false},y1:{display:false}}}});
 }
 async function loadKW(){
@@ -838,6 +857,7 @@ async function loadKW(){
   });
   const b=[0,0,0,0,0];S.kws.forEach(r=>{const p=r.position;if(p<=3)b[0]++;else if(p<=10)b[1]++;else if(p<=20)b[2]++;else if(p<=50)b[3]++;else b[4]++;});
   if(S.charts.pos)try{S.charts.pos.destroy();}catch(e){}
+  chartEmptyState('ch-pos', b.some(v=>v>0), 'Sin keywords posicionadas en este período.');
   S.charts.pos=new Chart(document.getElementById('ch-pos').getContext('2d'),{type:'doughnut',data:{labels:['Top 3','Top 10','Top 20','Top 50','50+'],datasets:[{data:b,backgroundColor:['#16a34a','#3b82f6','#e8352a','#f59e0b','#ddd'],borderColor:'#fff',borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,cutout:'70%',plugins:{legend:{position:'bottom',labels:{color:'#555',font:{size:10},padding:8,boxWidth:8}}}}});
 }
 
@@ -899,9 +919,11 @@ async function loadCamp(){
     const tbody=document.getElementById('camp-tbody');
     tbody.innerHTML=!rows.length?`<tr><td colspan="5" style="text-align:center;color:var(--gray-400);font-family:'DM Mono',monospace;font-size:11px;padding:16px">Sin campañas pagas en este período.</td></tr>`:rows.map(r=>{const nm=r.dimensionValues[0].value||'(sin nombre)';return`<tr><td style="font-size:12px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${nm}">${nm}</td><td>${fN(parseFloat(r.metricValues[0].value))}</td><td>${fN(parseFloat(r.metricValues[1].value))}</td><td>${parseFloat(r.metricValues[2].value)>0?`$${Math.round(parseFloat(r.metricValues[2].value)).toLocaleString('es-CL')}`:'—'}</td><td>${fSec(parseFloat(r.metricValues[3].value))}</td></tr>`;}).join('');
     const top8=rows.slice(0,8);
+    chartEmptyState('ch-camp', top8.some(r=>(parseFloat(r.metricValues[0].value)||0)>0||(parseFloat(r.metricValues[1].value)||0)>0));
     S.charts.camp=new Chart(document.getElementById('ch-camp').getContext('2d'),{type:'bar',data:{labels:top8.map(r=>{const n=r.dimensionValues[0].value||'(sin nombre)';return n.length>18?n.slice(0,16)+'…':n;}),datasets:[{label:'Sesiones',data:top8.map(r=>parseFloat(r.metricValues[0].value)||0),backgroundColor:'#e8352a',borderRadius:4,yAxisID:'y'},{label:'Conversiones',data:top8.map(r=>parseFloat(r.metricValues[1].value)||0),backgroundColor:'#3b82f6',borderRadius:4,yAxisID:'y1'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#555',font:{size:10},boxWidth:8}}},scales:{x:{ticks:{color:'#888',font:{size:9}},grid:{color:'#f0f0ee'}},y:{position:'left',ticks:{color:'#888',font:{size:10}},grid:{color:'#f0f0ee'}},y1:{position:'right',ticks:{color:'#3b82f6',font:{size:10}},grid:{display:false}}}}});
     document.getElementById('camp-main').style.display='grid';
     const tlRows=tlData.rows||[];
+    chartEmptyState('ch-camp-tl', tlRows.some(r=>(parseFloat(r.metricValues[0].value)||0)>0||(parseFloat(r.metricValues[1].value)||0)>0));
     S.charts.campTl=new Chart(document.getElementById('ch-camp-tl').getContext('2d'),{type:'line',data:{labels:tlRows.map(r=>r.dimensionValues[0].value.slice(4)),datasets:[{label:'Sesiones',data:tlRows.map(r=>parseFloat(r.metricValues[0].value)||0),borderColor:'#e8352a',backgroundColor:'rgba(232,53,42,0.06)',tension:.4,fill:true,pointRadius:0,borderWidth:2,yAxisID:'y'},{label:'Conversiones',data:tlRows.map(r=>parseFloat(r.metricValues[1].value)||0),borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,0.04)',tension:.4,fill:false,pointRadius:0,borderWidth:1.5,borderDash:[4,3],yAxisID:'y1'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#555',font:{size:10},boxWidth:8}}},scales:{x:{ticks:{color:'#888',font:{size:10},maxTicksLimit:8},grid:{color:'#f0f0ee'}},y:{display:false},y1:{display:false}}}});
     document.getElementById('camp-tl-panel').style.display='block';
   }catch(e){document.getElementById('camp-loading').style.display='none';const errEl=document.getElementById('camp-error');errEl.textContent=`⚠ Error: ${e.message}`;errEl.style.display='block';}
@@ -989,6 +1011,7 @@ function processGA4Data(currData,prevData,weeklyData){
       backgroundColor:s.color+'22',
       tension:.4,fill:false,pointRadius:3,pointHoverRadius:5,borderWidth:2
     })).filter(ds=>ds.data.some(v=>v>0));// hide sources with no data
+    chartEmptyState('ch-geo-traffic', datasets.length>0, 'Sin sesiones registradas desde IAs en este período.');
     S.charts.geoTraffic=new Chart(document.getElementById('ch-geo-traffic').getContext('2d'),{
       type:'line',
       data:{labels:wLabels,datasets},
@@ -1071,14 +1094,54 @@ function importClients(input){
 }
 
 // ─── POLAROID ────────────────────────────────────────────────────────────────
-function takePolaroid(){
+async function takePolaroid(){
+  if(!S.id) return;
+  const btn=document.getElementById('btn-polaroid');
+  const prevNav=document.querySelector('.nav.on')?.id;
+  if(btn){btn.disabled=true;btn.dataset.orig=btn.textContent;btn.textContent='⏳ Preparando reporte…';}
+
   const date=new Date().toLocaleDateString('es-CL',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
   document.getElementById('pdf-logo').textContent=S.name||'Bigbuda';
   document.getElementById('pdf-meta').textContent=`Reporte SEO · AEO · GEO · Campañas — ${date} — ${S.days} días`;
-  const screens=document.querySelectorAll('.screen');
-  screens.forEach(s=>{if(s.id!=='sc-auth')s.classList.add('on');});
+
+  // Recarga cada sección con los datos ACTUALES del cliente seleccionado —
+  // sin esto, el PDF mostraba lo último pintado en pantalla (a veces de otro cliente).
+  const isHidden=el=>!el||el.style.display==='none';
+  const SECTIONS=[
+    {id:'seo', load:loadSEO, noBox:['seo-no-service']},
+    {id:'aeo', load:loadAEO, noBox:['aeo-no-service']},
+    {id:'camp', load:loadCamp, noBox:['camp-no-service','camp-no-ga4']},
+    {id:'meta', load:loadMeta, noBox:['meta-no-service','meta-no-acc']},
+    {id:'geo', load:renderGEO, noBox:['geo-no-service','geo-no-ga4']},
+  ];
+  const included=[];
+  for(const sec of SECTIONS){
+    try{ await sec.load(); }catch(e){ console.error('Polaroid', sec.id, e.message); }
+    const blocked=sec.noBox.some(bid=>!isHidden(document.getElementById(bid)));
+    if(!blocked) included.push('sc-'+sec.id);
+  }
+  // Recomendaciones solo si ya se generó un análisis en esta sesión — no lo disparamos
+  // automáticamente (llamada a Claude AI con costo) ni mostramos el estado vacío en el PDF.
+  if(document.getElementById('rec-content')?.style.display!=='none') included.push('sc-rec');
+
+  // Reordena las secciones incluidas en un orden lógico para el reporte
+  const contentEl=document.querySelector('.content');
+  included.forEach(id=>{const el=document.getElementById(id); if(el) contentEl.appendChild(el);});
+
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
+  included.forEach(id=>document.getElementById(id)?.classList.add('on'));
+
+  if(btn){btn.disabled=false;btn.textContent=btn.dataset.orig||'📷 Tomar una Polaroid';}
+
+  // Pequeña espera para que Chart.js termine de pintar antes de imprimir
+  await new Promise(r=>setTimeout(r,350));
   window.print();
-  setTimeout(()=>{screens.forEach(s=>s.classList.remove('on'));const activeId='sc-'+(['rec','seo','aeo','camp','geo'].find(n=>document.getElementById('nv-'+n)?.classList.contains('on'))||'seo');document.getElementById(activeId)?.classList.add('on');},1000);
+
+  setTimeout(()=>{
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
+    if(prevNav){const n=prevNav.replace('nv-','');goSec(n, document.getElementById(prevNav));}
+    else showSc('sc-seo');
+  }, 800);
 }
 
 // ─── META ADS ─────────────────────────────────────────────────────────────────
@@ -1290,6 +1353,7 @@ async function loadMeta(){
 
     // Daily chart
     const dailyRows = (daily.data||[]).sort((a,b)=>a.date_start?.localeCompare(b.date_start));
+    chartEmptyState('ch-meta-tl', dailyRows.some(r=>(parseFloat(r.spend)||0)>0||(parseFloat(r.clicks)||0)>0), 'Sin gasto registrado en este período.');
     S.charts.metaTl = new Chart(document.getElementById('ch-meta-tl').getContext('2d'),{
       type:'line',
       data:{
