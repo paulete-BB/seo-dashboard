@@ -419,6 +419,50 @@ body { font-family: 'DM Sans', sans-serif; background: #f5f5f3; color: #111; min
 
 
 
+      <div class="screen" id="sc-aeo">
+        <div class="ph">
+          <div><div class="ph-t">AEO — Google AI</div><div class="ph-s" id="aeo-s">Queries conversacionales</div></div>
+          <div class="rtabs"><button class="rtab on" onclick="setRange(14,this);loadAEO()">14d</button><button class="rtab" onclick="setRange(28,this);loadAEO()">28d</button><button class="rtab" onclick="setRange(90,this);loadAEO()">90d</button></div>
+        </div>
+        <div id="aeo-no-service" class="infobox" style="display:none">🔒 No tienes el servicio de Posicionamiento SEO · AEO · GEO contratado, pero cuando quieras puedes activarlo con nosotros.</div>
+        <div id="aeo-body" class="panel">
+          <div class="ph2"><span class="pt">Queries conversacionales (proxy AI Overviews)</span><span class="ptag ta">Heurística GSC</span></div>
+          <div class="pb2" style="padding:0 16px 14px">
+            <div class="infobox" style="margin-bottom:10px;margin-top:8px">Queries de 5+ palabras o con intención informacional — los que con mayor frecuencia disparan AI Overviews.</div>
+            <div id="aeo-conv-body"></div>
+          </div>
+        </div>
+      </div>
+
+
+
+      <div class="screen" id="sc-camp">
+        <div class="ph">
+          <div><div class="ph-t">Campañas</div><div class="ph-s" id="camp-s">Resultados desde GA4</div></div>
+          <div class="rtabs"><button class="rtab on" onclick="setRange(14,this);loadCamp()">14d</button><button class="rtab" onclick="setRange(28,this);loadCamp()">28d</button><button class="rtab" onclick="setRange(90,this);loadCamp()">90d</button></div>
+        </div>
+        <div id="camp-no-service" class="infobox" style="display:none">🔒 No tienes el servicio de Google Ads contratado, pero cuando quieras puedes activarlo con nosotros.</div>
+        <div id="camp-no-ga4" class="infobox warn" style="display:none">⚠ Este cliente no tiene GA4 configurado.</div>
+        <div id="camp-loading" class="infobox info" style="display:none"><div class="spin-row"><span class="spinner"></span>Cargando campañas…</div></div>
+        <div id="camp-error" class="infobox warn" style="display:none"></div>
+        <div class="kpis" id="camp-kpis" style="display:none">
+          <div class="kpi hi"><div class="kl">Sesiones pagas</div><div class="kv" id="camp-k-sess">—</div><div class="kd" id="camp-k-sess-d"></div></div>
+          <div class="kpi"><div class="kl">Conversiones</div><div class="kv" id="camp-k-conv">—</div><div class="kd" id="camp-k-conv-d"></div></div>
+          <div class="kpi"><div class="kl">Costo / conversión</div><div class="kv" id="camp-k-cpc">—</div><div class="kd"></div></div>
+          <div class="kpi"><div class="kl">T. sesión promedio</div><div class="kv" id="camp-k-dur">—</div><div class="kd"></div></div>
+        </div>
+        <div class="g2" id="camp-main" style="display:none;margin-top:10px">
+          <div class="panel"><div class="ph2"><span class="pt">Resultados por campaña</span><span class="ptag tp">GA4 · Ads</span></div><div class="pb2" style="padding:0 16px 12px"><table class="ga4t"><thead><tr><th>Campaña</th><th>Sesiones</th><th>Conversiones</th><th>Costo/conv.</th><th>T. sesión</th></tr></thead><tbody id="camp-tbody"></tbody></table></div></div>
+          <div class="panel"><div class="ph2"><span class="pt">Sesiones vs conversiones</span><span class="ptag tp">GA4</span></div><div class="pb2"><div class="cw"><canvas id="ch-camp"></canvas></div></div></div>
+        </div>
+        <div class="panel" id="camp-tl-panel" style="display:none;margin-top:10px">
+          <div class="ph2"><span class="pt">Tendencia diaria</span><span class="ptag tp">GA4</span></div>
+          <div class="pb2"><div class="cw"><canvas id="ch-camp-tl"></canvas></div></div>
+        </div>
+      </div>
+
+
+
       <!-- META ADS -->
       <div class="screen" id="sc-meta">
         <div class="ph">
@@ -502,66 +546,8 @@ body { font-family: 'DM Sans', sans-serif; background: #f5f5f3; color: #111; min
         </div>
       </div>
 
-      <!-- RECOMENDACIONES -->
-      <div class="screen" id="sc-rec">
-        <div class="ph">
-          <div><div class="ph-t">✦ Recomendaciones</div><div class="ph-s" id="rec-s">Análisis con Claude AI</div></div>
-          <button class="brs" id="rec-btn" onclick="loadRec(true)">✦ Analizar con Claude AI</button>
-        </div>
-        <div id="rec-loading" class="infobox info" style="display:none"><div class="spin-row"><span class="spinner"></span><span id="rec-loading-txt">Analizando…</span></div></div>
-        <div id="rec-error" class="infobox warn" style="display:none"></div>
-        <div id="rec-empty" class="infobox">Selecciona un cliente y haz clic en "Analizar con Claude AI".</div>
-        <div id="rec-content" style="display:none">
-          <div class="rec-summary" id="rec-summary-box" style="display:none"><div class="rec-summary-t">✦ Resumen ejecutivo</div><div id="rec-summary-txt"></div></div>
-          <div class="rec-area"><div class="rec-area-title">SEO</div><div id="rec-seo-items"></div></div>
-          <div class="rec-area"><div class="rec-area-title">AEO · Posicionamiento en IAs</div><div id="rec-aeo-items"></div></div>
-          <div class="rec-area"><div class="rec-area-title">Campañas</div><div id="rec-camp-items"></div></div>
-        </div>
-      </div>
 
-      <!-- AEO -->
-      <div class="screen" id="sc-aeo">
-        <div class="ph">
-          <div><div class="ph-t">AEO — Google AI</div><div class="ph-s" id="aeo-s">Queries conversacionales</div></div>
-          <div class="rtabs"><button class="rtab on" onclick="setRange(14,this);loadAEO()">14d</button><button class="rtab" onclick="setRange(28,this);loadAEO()">28d</button><button class="rtab" onclick="setRange(90,this);loadAEO()">90d</button></div>
-        </div>
-        <div id="aeo-no-service" class="infobox" style="display:none">🔒 No tienes el servicio de Posicionamiento SEO · AEO · GEO contratado, pero cuando quieras puedes activarlo con nosotros.</div>
-        <div id="aeo-body" class="panel">
-          <div class="ph2"><span class="pt">Queries conversacionales (proxy AI Overviews)</span><span class="ptag ta">Heurística GSC</span></div>
-          <div class="pb2" style="padding:0 16px 14px">
-            <div class="infobox" style="margin-bottom:10px;margin-top:8px">Queries de 5+ palabras o con intención informacional — los que con mayor frecuencia disparan AI Overviews.</div>
-            <div id="aeo-conv-body"></div>
-          </div>
-        </div>
-      </div>
 
-      <!-- CAMPAÑAS -->
-      <div class="screen" id="sc-camp">
-        <div class="ph">
-          <div><div class="ph-t">Campañas</div><div class="ph-s" id="camp-s">Resultados desde GA4</div></div>
-          <div class="rtabs"><button class="rtab on" onclick="setRange(14,this);loadCamp()">14d</button><button class="rtab" onclick="setRange(28,this);loadCamp()">28d</button><button class="rtab" onclick="setRange(90,this);loadCamp()">90d</button></div>
-        </div>
-        <div id="camp-no-service" class="infobox" style="display:none">🔒 No tienes el servicio de Google Ads contratado, pero cuando quieras puedes activarlo con nosotros.</div>
-        <div id="camp-no-ga4" class="infobox warn" style="display:none">⚠ Este cliente no tiene GA4 configurado.</div>
-        <div id="camp-loading" class="infobox info" style="display:none"><div class="spin-row"><span class="spinner"></span>Cargando campañas…</div></div>
-        <div id="camp-error" class="infobox warn" style="display:none"></div>
-        <div class="kpis" id="camp-kpis" style="display:none">
-          <div class="kpi hi"><div class="kl">Sesiones pagas</div><div class="kv" id="camp-k-sess">—</div><div class="kd" id="camp-k-sess-d"></div></div>
-          <div class="kpi"><div class="kl">Conversiones</div><div class="kv" id="camp-k-conv">—</div><div class="kd" id="camp-k-conv-d"></div></div>
-          <div class="kpi"><div class="kl">Costo / conversión</div><div class="kv" id="camp-k-cpc">—</div><div class="kd"></div></div>
-          <div class="kpi"><div class="kl">T. sesión promedio</div><div class="kv" id="camp-k-dur">—</div><div class="kd"></div></div>
-        </div>
-        <div class="g2" id="camp-main" style="display:none;margin-top:10px">
-          <div class="panel"><div class="ph2"><span class="pt">Resultados por campaña</span><span class="ptag tp">GA4 · Ads</span></div><div class="pb2" style="padding:0 16px 12px"><table class="ga4t"><thead><tr><th>Campaña</th><th>Sesiones</th><th>Conversiones</th><th>Costo/conv.</th><th>T. sesión</th></tr></thead><tbody id="camp-tbody"></tbody></table></div></div>
-          <div class="panel"><div class="ph2"><span class="pt">Sesiones vs conversiones</span><span class="ptag tp">GA4</span></div><div class="pb2"><div class="cw"><canvas id="ch-camp"></canvas></div></div></div>
-        </div>
-        <div class="panel" id="camp-tl-panel" style="display:none;margin-top:10px">
-          <div class="ph2"><span class="pt">Tendencia diaria</span><span class="ptag tp">GA4</span></div>
-          <div class="pb2"><div class="cw"><canvas id="ch-camp-tl"></canvas></div></div>
-        </div>
-      </div>
-
-      <!-- AEO·GEO -->
       <div class="screen" id="sc-geo">
         <div class="ph">
           <div><div class="ph-t">AEO · GEO</div><div class="ph-s" id="geo-s">Visibilidad y tráfico desde IAs</div></div>
@@ -583,6 +569,25 @@ body { font-family: 'DM Sans', sans-serif; background: #f5f5f3; color: #111; min
         <div id="geo-no-ga4" class="infobox warn" style="display:none">⚠ Sin GA4 configurado — agrega el Property ID al editar este cliente.</div>
         <div id="geo-ga4-loading" style="display:none" class="infobox info"><div class="spin-row"><span class="spinner"></span>Cargando datos GA4…</div></div>
         <div id="geo-ga4-error" class="infobox warn" style="display:none"></div>
+      </div>
+
+
+
+      <!-- RECOMENDACIONES -->
+      <div class="screen" id="sc-rec">
+        <div class="ph">
+          <div><div class="ph-t">✦ Recomendaciones</div><div class="ph-s" id="rec-s">Análisis con Claude AI</div></div>
+          <button class="brs" id="rec-btn" onclick="loadRec(true)">✦ Analizar con Claude AI</button>
+        </div>
+        <div id="rec-loading" class="infobox info" style="display:none"><div class="spin-row"><span class="spinner"></span><span id="rec-loading-txt">Analizando…</span></div></div>
+        <div id="rec-error" class="infobox warn" style="display:none"></div>
+        <div id="rec-empty" class="infobox">Selecciona un cliente y haz clic en "Analizar con Claude AI".</div>
+        <div id="rec-content" style="display:none">
+          <div class="rec-summary" id="rec-summary-box" style="display:none"><div class="rec-summary-t">✦ Resumen ejecutivo</div><div id="rec-summary-txt"></div></div>
+          <div class="rec-area"><div class="rec-area-title">SEO</div><div id="rec-seo-items"></div></div>
+          <div class="rec-area"><div class="rec-area-title">AEO · Posicionamiento en IAs</div><div id="rec-aeo-items"></div></div>
+          <div class="rec-area"><div class="rec-area-title">Campañas</div><div id="rec-camp-items"></div></div>
+        </div>
       </div>
     </div>
   </div>
@@ -1117,11 +1122,9 @@ async function takePolaroid(){
     if(!blocked) included.push('sc-'+sec.id);
   }
   // Recomendaciones es un espacio interno de la agencia — nunca va en el PDF para el cliente.
-
-  // Reordena las secciones incluidas en un orden lógico para el reporte
-  const contentEl=document.querySelector('.content');
-  included.forEach(id=>{const el=document.getElementById(id); if(el) contentEl.appendChild(el);});
-
+  // El orden de impresión sigue el orden real de las secciones en el HTML (seo, aeo, camp,
+  // meta, geo) — a propósito no se reordena el DOM en cada clic, para que no quede
+  // "revuelto" entre una Polaroid y la siguiente dentro de la misma sesión.
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on','print-first'));
   included.forEach(id=>document.getElementById(id)?.classList.add('on'));
   document.getElementById(included[0])?.classList.add('print-first');
