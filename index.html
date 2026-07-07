@@ -224,9 +224,10 @@ body { font-family: 'DM Sans', sans-serif; background: #f5f5f3; color: #111; min
   .shell{display:block !important;}
   .content{padding:0 !important;}
   #pdf-header{display:block !important;}
-  .screen{display:block !important;margin-bottom:24px;break-inside:avoid-page;}
-  .screen+.screen{break-before:page;page-break-before:always;}
-  .screen.print-first{break-before:auto !important;page-break-before:auto !important;}
+  .screen{display:none !important;}
+  .screen.on{display:block !important;margin-bottom:24px;break-inside:avoid-page;}
+  .screen.on~.screen.on{break-before:page;page-break-before:always;}
+  .screen.on.print-first{break-before:auto !important;page-break-before:auto !important;}
   #sc-auth{display:none !important;}
   .kpis{grid-template-columns:repeat(4,1fr) !important;gap:6px !important;}
   .g2,.g3{grid-template-columns:1fr 1fr !important;gap:8px !important;}
