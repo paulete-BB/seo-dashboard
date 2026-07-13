@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>SEO · AEO · GEO Dashboard</title>
+<title>Resultados Bigbuda</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
@@ -662,7 +662,9 @@ const AI_SOURCES=[
   {key:'google_ai',label:'Google AI Overview',domains:['google.com','bard.google.com','gemini.google.com'],color:'#4285f4'},
   {key:'claude',label:'Claude / Copilot',domains:['claude.ai','copilot.microsoft.com','bing.com'],color:'#c96442'},
 ];
+const APP_TITLE='Resultados Bigbuda';
 const S={token:null,url:null,name:'',id:null,days:14,charts:{},kws:[]};
+function setDocTitle(){document.title=S.name?`${S.name} — ${APP_TITLE}`:APP_TITLE;}
 const ls={g:k=>{try{return JSON.parse(localStorage.getItem(k));}catch(e){return null;}},s:(k,v)=>localStorage.setItem(k,JSON.stringify(v))};
 const clients=()=>ls.g('bb_cl')||[];
 const SERVICES=[{key:'seo',label:'Posicionamiento SEO · AEO · GEO'},{key:'ads',label:'Google Ads'},{key:'meta',label:'Meta Ads'}];
@@ -845,7 +847,7 @@ function updateNavLocks(){
   Object.entries(map).forEach(([key,ids])=>{if(!svc.includes(key))ids.forEach(id=>document.getElementById(id)?.classList.add('locked'));});
 }
 function doOAuth(){const st=Math.random().toString(36).slice(2);sessionStorage.setItem('bb_os',st);const p=new URLSearchParams({client_id:CID,redirect_uri:REDIR,response_type:'token',scope:SCOPE,state:st});location.href='https://accounts.google.com/o/oauth2/v2/auth?'+p;}
-function doLogout(){S.token=null;S.url=null;S.name='';S.id=null;sessionStorage.removeItem('bb_t');sessionStorage.removeItem('bb_last');destroyC();setConn(false);renderCL();showAuth();}
+function doLogout(){S.token=null;S.url=null;S.name='';S.id=null;sessionStorage.removeItem('bb_t');sessionStorage.removeItem('bb_last');destroyC();setConn(false);renderCL();showAuth();setDocTitle();}
 function setConn(ok){
   const p=document.getElementById('t-pill');p.className='pill'+(ok?' ok':'');
   document.getElementById('t-st').textContent=ok?'Conectado':'Sin conectar';
@@ -853,6 +855,7 @@ function setConn(ok){
   document.getElementById('nv-out').classList.toggle('hidden',!ok);
 }
 function enterDash(){
+  setDocTitle();
   document.getElementById('t-ag').textContent=S.name||'Cliente';
   document.getElementById('ag-nm').textContent=S.name||'Bigbuda';
   document.getElementById('logo-ph').textContent=(S.name||'B')[0].toUpperCase();
@@ -1383,10 +1386,16 @@ async function takePolaroid(){
 
   if(btn){btn.disabled=false;btn.textContent=btn.dataset.orig||'📷 Tomar una Polaroid';}
 
+  // El título del documento se usa como nombre sugerido del PDF al "Guardar como PDF"
+  const slug=(S.name||'Cliente').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-zA-Z0-9]+/g,'_').replace(/^_+|_+$/g,'');
+  const isoDate=new Date().toISOString().slice(0,10);
+  document.title=`Reporte_${slug}_${isoDate}`;
+
   // Pequeña espera para que Chart.js termine de pintar antes de imprimir
   await new Promise(r=>setTimeout(r,350));
   window.print();
 
+  setDocTitle();
   setTimeout(()=>{
     document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on','print-first'));
     if(prevNav){const n=prevNav.replace('nv-','');goSec(n, document.getElementById(prevNav));}
