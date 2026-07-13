@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Resultados Bigbuda</title>
+<title>Panel de Resultados Clientes Bigbuda</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
@@ -662,7 +662,7 @@ const AI_SOURCES=[
   {key:'google_ai',label:'Google AI Overview',domains:['google.com','bard.google.com','gemini.google.com'],color:'#4285f4'},
   {key:'claude',label:'Claude / Copilot',domains:['claude.ai','copilot.microsoft.com','bing.com'],color:'#c96442'},
 ];
-const APP_TITLE='Resultados Bigbuda';
+const APP_TITLE='Panel de Resultados Clientes Bigbuda';
 const S={token:null,url:null,name:'',id:null,days:14,charts:{},kws:[]};
 function setDocTitle(){document.title=S.name?`${S.name} — ${APP_TITLE}`:APP_TITLE;}
 const ls={g:k=>{try{return JSON.parse(localStorage.getItem(k));}catch(e){return null;}},s:(k,v)=>localStorage.setItem(k,JSON.stringify(v))};
@@ -1387,9 +1387,9 @@ async function takePolaroid(){
   if(btn){btn.disabled=false;btn.textContent=btn.dataset.orig||'📷 Tomar una Polaroid';}
 
   // El título del documento se usa como nombre sugerido del PDF al "Guardar como PDF"
-  const slug=(S.name||'Cliente').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-zA-Z0-9]+/g,'_').replace(/^_+|_+$/g,'');
+  const safeName=(S.name||'Cliente').replace(/[\\/:*?"<>|]/g,'').trim();
   const isoDate=new Date().toISOString().slice(0,10);
-  document.title=`Reporte_${slug}_${isoDate}`;
+  document.title=`Así Crece ${safeName} con Bigbuda - ${isoDate}`;
 
   // Pequeña espera para que Chart.js termine de pintar antes de imprimir
   await new Promise(r=>setTimeout(r,350));
