@@ -56,6 +56,9 @@ body { font-family: 'Inter', sans-serif; background: radial-gradient(130% 90% at
 .ci-del:hover { color:var(--danger); }
 .ci.active .ci-nm { color:var(--gold); }
 .ci.active .ci-av { background:var(--gold); color:#0E0E0E; }
+.ci-group { border:1px solid var(--border); border-radius:var(--radius); padding:4px; margin:2px 0; }
+.ci-group .ci:hover { background:var(--gray-100); }
+.ci-group-h { font-size:9px; text-transform:uppercase; letter-spacing:.08em; color:var(--gray-400); font-family:'Inter',sans-serif; padding:4px 8px 2px; }
 .s-foot { margin-top:auto; padding:12px 16px; border-top:1px solid var(--border); font-size:10px; color:var(--gray-400); font-family:'Inter',sans-serif; flex-shrink:0; line-height:1.6; }
 .s-foot span { color:var(--gold); }
 .main { margin-left:220px; flex:1; min-width:0; }
@@ -344,6 +347,7 @@ body { font-family: 'Inter', sans-serif; background: radial-gradient(130% 90% at
       <div class="mt" id="m-title">Agregar cliente</div>
       <div class="ms" id="m-sub">Selecciona la propiedad directamente desde tu GSC — sin escribir URLs a mano.</div>
       <div class="fl"><label class="fl-l">Nombre</label><input class="fi" type="text" id="m-nm" placeholder="Ej: Filtrocentro"/></div>
+      <div class="fl"><label class="fl-l">Grupo <span style="color:var(--gray-400)">(opcional — para agrupar clientes relacionados, ej: mismo cliente con SEO en la web y campañas en una landing)</span></label><input class="fi" type="text" id="m-group" placeholder="Ej: Tecnystand"/></div>
       <div class="fl">
         <label class="fl-l">Servicios contratados</label>
         <div style="display:flex;flex-direction:column;gap:6px">
@@ -737,9 +741,20 @@ function showSc(id){
 function showAuth(){setConn(false);showSc('sc-auth');}
 
 function renderCL(){
-  const list=clients().slice().sort((a,b)=>a.name.localeCompare(b.name,'es',{sensitivity:'base'})),el=document.getElementById('clist');
-  if(!list.length){el.innerHTML=`<div style="padding:8px 16px;font-size:11px;color:var(--gray-400);font-family:'Inter',sans-serif">Sin clientes.<br>Usa + para agregar.</div>`;return;}
-  el.innerHTML=list.map(c=>`<div class="ci ${S.id===c.id?'active':''}" onclick="pickClient('${c.id}')"><div class="ci-av">${c.name[0].toUpperCase()}</div><div class="ci-info"><div class="ci-nm">${c.name}</div><div class="ci-url">${c.url?c.url.replace(/https?:\/\//,'').replace(/\/$/,''):'Sin GSC'}</div></div><button class="ci-del" onclick="editClient(event,'${c.id}')" title="Editar" style="font-size:12px">✎</button><button class="ci-del" onclick="delC(event,'${c.id}')" title="Eliminar">×</button></div>`).join('');
+  const raw=clients(),el=document.getElementById('clist');
+  if(!raw.length){el.innerHTML=`<div style="padding:8px 16px;font-size:11px;color:var(--gray-400);font-family:'Inter',sans-serif">Sin clientes.<br>Usa + para agregar.</div>`;return;}
+  const cmp=(a,b)=>a.localeCompare(b,'es',{sensitivity:'base'});
+  const byGroup={},standalone=[];
+  raw.forEach(c=>{const g=(c.group||'').trim();if(g)(byGroup[g]||(byGroup[g]=[])).push(c);else standalone.push(c);});
+  const clusters=[];
+  Object.entries(byGroup).forEach(([g,items])=>{
+    if(items.length>1)clusters.push({key:g,group:g,items:items.slice().sort((a,b)=>cmp(a.name,b.name))});
+    else standalone.push(...items);
+  });
+  standalone.forEach(c=>clusters.push({key:c.name,items:[c]}));
+  clusters.sort((a,b)=>cmp(a.key,b.key));
+  const row=c=>`<div class="ci ${S.id===c.id?'active':''}" onclick="pickClient('${c.id}')"><div class="ci-av">${c.name[0].toUpperCase()}</div><div class="ci-info"><div class="ci-nm">${c.name}</div><div class="ci-url">${c.url?c.url.replace(/https?:\/\//,'').replace(/\/$/,''):'Sin GSC'}</div></div><button class="ci-del" onclick="editClient(event,'${c.id}')" title="Editar" style="font-size:12px">✎</button><button class="ci-del" onclick="delC(event,'${c.id}')" title="Eliminar">×</button></div>`;
+  el.innerHTML=clusters.map(cl=>cl.group?`<div class="ci-group"><div class="ci-group-h">${cl.group}</div>${cl.items.map(row).join('')}</div>`:cl.items.map(row).join('')).join('');
 }
 
 let S_editId=null;
@@ -750,6 +765,7 @@ async function openAdd(){
   document.getElementById('m-sub').textContent='Selecciona la propiedad directamente desde tu GSC — sin escribir URLs a mano.';
   document.getElementById('m-err').classList.remove('on');
   document.getElementById('m-nm').value='';
+  if(document.getElementById('m-group'))document.getElementById('m-group').value='';
   document.getElementById('m-ga4').value='';
   document.getElementById('m-meta').value='';
   if(document.getElementById('m-fbpage'))document.getElementById('m-fbpage').value='';
@@ -768,6 +784,7 @@ async function editClient(e,id){
   document.getElementById('m-sub').textContent='Actualiza los datos del cliente, incluidos los IDs de Meta Ads.';
   document.getElementById('m-err').classList.remove('on');
   document.getElementById('m-nm').value=c.name||'';
+  if(document.getElementById('m-group'))document.getElementById('m-group').value=c.group||'';
   document.getElementById('m-ga4').value=c.ga4||'';
   document.getElementById('m-meta').value=c.meta||'';
   if(document.getElementById('m-fbpage'))document.getElementById('m-fbpage').value=c.fbpage||'';
@@ -802,6 +819,7 @@ async function fillSiteSelect(selectedUrl){
 function closeModal(id){document.getElementById(id).classList.add('hidden');}
 function saveClient(){
   const nm=document.getElementById('m-nm').value.trim();
+  const group=document.getElementById('m-group')?.value.trim();
   const url=document.getElementById('m-site').value;
   const ga4=document.getElementById('m-ga4').value.trim();
   const meta=document.getElementById('m-meta').value.trim().replace(/^act_/,'');
@@ -813,7 +831,7 @@ function saveClient(){
   if(services.includes('seo')&&!url){const e=document.getElementById('m-err');e.textContent='⚠ El servicio SEO · AEO · GEO requiere elegir una propiedad GSC.';e.classList.add('on');return;}
   const metaTokenKey=document.getElementById('m-metatoken')?.value.trim().toUpperCase().replace(/[^A-Z0-9_]/g,'');
   const list=clients();
-  const data={name:nm,url,ga4:ga4||null,meta:meta||null,fbpage:fbpage||null,igpage:igpage||null,services,metaTokenKey:metaTokenKey||null};
+  const data={name:nm,group:group||null,url,ga4:ga4||null,meta:meta||null,fbpage:fbpage||null,igpage:igpage||null,services,metaTokenKey:metaTokenKey||null};
   if(S_editId){
     const idx=list.findIndex(c=>c.id===S_editId);
     if(idx>-1){list[idx]={...list[idx],...data};if(S.id===S_editId){S.url=url;S.name=nm;}}
