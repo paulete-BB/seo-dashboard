@@ -737,7 +737,7 @@ function showSc(id){
 function showAuth(){setConn(false);showSc('sc-auth');}
 
 function renderCL(){
-  const list=clients(),el=document.getElementById('clist');
+  const list=clients().slice().sort((a,b)=>a.name.localeCompare(b.name,'es',{sensitivity:'base'})),el=document.getElementById('clist');
   if(!list.length){el.innerHTML=`<div style="padding:8px 16px;font-size:11px;color:var(--gray-400);font-family:'Inter',sans-serif">Sin clientes.<br>Usa + para agregar.</div>`;return;}
   el.innerHTML=list.map(c=>`<div class="ci ${S.id===c.id?'active':''}" onclick="pickClient('${c.id}')"><div class="ci-av">${c.name[0].toUpperCase()}</div><div class="ci-info"><div class="ci-nm">${c.name}</div><div class="ci-url">${c.url?c.url.replace(/https?:\/\//,'').replace(/\/$/,''):'Sin GSC'}</div></div><button class="ci-del" onclick="editClient(event,'${c.id}')" title="Editar" style="font-size:12px">✎</button><button class="ci-del" onclick="delC(event,'${c.id}')" title="Eliminar">×</button></div>`).join('');
 }
