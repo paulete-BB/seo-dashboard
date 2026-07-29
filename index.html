@@ -358,7 +358,6 @@ body { font-family: 'Inter', sans-serif; background: radial-gradient(130% 90% at
       <div class="fl"><label class="fl-l">Facebook Page ID <span style="color:var(--gray-400)">(opcional)</span></label><input class="fi" type="text" id="m-fbpage" placeholder="Ej: 111180974351659"/></div>
       <div class="fl"><label class="fl-l">Instagram Account ID <span style="color:var(--gray-400)">(opcional)</span></label><input class="fi" type="text" id="m-igpage" placeholder="Ej: 17841454448873700"/></div>
       <div class="fl"><label class="fl-l">Meta Token Key <span style="color:var(--gray-400)">(opcional, solo si este cliente usa un token de Meta distinto al de Bigbuda — ej: PISOURBANO)</span></label><input class="fi" type="text" id="m-metatoken" placeholder="Dejar vacío para usar el token por defecto" style="text-transform:uppercase"/></div>
-      <div class="fl"><label class="fl-l">Seguidores Instagram <span style="color:var(--gray-400)">(manual, opcional)</span></label><input class="fi" type="number" id="m-igfollowers" placeholder="Ej: 1250"/></div>
       <div class="errmsg" id="m-err"></div>
       <div class="mact"><button class="bg" onclick="closeModal('mod-add')">Cancelar</button><button class="btn bb" style="width:auto" onclick="saveClient()">Guardar</button></div>
     </div>
@@ -755,7 +754,6 @@ async function openAdd(){
   document.getElementById('m-meta').value='';
   if(document.getElementById('m-fbpage'))document.getElementById('m-fbpage').value='';
   if(document.getElementById('m-igpage'))document.getElementById('m-igpage').value='';
-  if(document.getElementById('m-igfollowers'))document.getElementById('m-igfollowers').value='';
   if(document.getElementById('m-metatoken'))document.getElementById('m-metatoken').value='';
   SERVICES.forEach(s=>document.getElementById('m-svc-'+s.key).checked=false);
   await fillSiteSelect();
@@ -774,7 +772,6 @@ async function editClient(e,id){
   document.getElementById('m-meta').value=c.meta||'';
   if(document.getElementById('m-fbpage'))document.getElementById('m-fbpage').value=c.fbpage||'';
   if(document.getElementById('m-igpage'))document.getElementById('m-igpage').value=c.igpage||'';
-  if(document.getElementById('m-igfollowers'))document.getElementById('m-igfollowers').value=c.igfollowers||'';
   if(document.getElementById('m-metatoken'))document.getElementById('m-metatoken').value=c.metaTokenKey||'';
   const svc=c.services||SERVICES.map(s=>s.key);
   SERVICES.forEach(s=>document.getElementById('m-svc-'+s.key).checked=svc.includes(s.key));
@@ -814,10 +811,9 @@ function saveClient(){
   if(!nm){const e=document.getElementById('m-err');e.textContent='⚠ Completa el nombre.';e.classList.add('on');return;}
   if(!services.length){const e=document.getElementById('m-err');e.textContent='⚠ Selecciona al menos un servicio contratado.';e.classList.add('on');return;}
   if(services.includes('seo')&&!url){const e=document.getElementById('m-err');e.textContent='⚠ El servicio SEO · AEO · GEO requiere elegir una propiedad GSC.';e.classList.add('on');return;}
-  const igfollowers=document.getElementById('m-igfollowers')?.value.trim();
   const metaTokenKey=document.getElementById('m-metatoken')?.value.trim().toUpperCase().replace(/[^A-Z0-9_]/g,'');
   const list=clients();
-  const data={name:nm,url,ga4:ga4||null,meta:meta||null,fbpage:fbpage||null,igpage:igpage||null,igfollowers:igfollowers?parseInt(igfollowers):null,services,metaTokenKey:metaTokenKey||null};
+  const data={name:nm,url,ga4:ga4||null,meta:meta||null,fbpage:fbpage||null,igpage:igpage||null,services,metaTokenKey:metaTokenKey||null};
   if(S_editId){
     const idx=list.findIndex(c=>c.id===S_editId);
     if(idx>-1){list[idx]={...list[idx],...data};if(S.id===S_editId){S.url=url;S.name=nm;}}
@@ -1639,17 +1635,12 @@ async function loadMeta(){
     // Si consultamos el ID de IG directamente, igData ya trae followers_count en su raíz;
     // si vino de la Página (sin igPageId configurado), viene anidado.
     const igAccount = (igData && igData.followers_count != null) ? igData : (igData?.instagram_business_account || igData?.connected_instagram_account);
-    const manualIgFollowers = client.igfollowers || null;
     if(igAccount && igAccount.followers_count != null){
       document.getElementById('meta-ig-followers').textContent = fN(igAccount.followers_count) + ' seguidores';
       document.getElementById('meta-ig-delta').innerHTML = '<span style="color:var(--gray-400)">@' + (igAccount.username||'') + '</span>';
-    } else if(manualIgFollowers){
-      document.getElementById('meta-ig-followers').textContent = fN(manualIgFollowers) + ' seguidores';
-      document.getElementById('meta-ig-delta').innerHTML = '<span style="color:var(--gray-400);font-size:10px">dato manual · @tecnystandchile</span>';
     } else {
       document.getElementById('meta-ig-row').style.opacity = '0.4';
-      document.getElementById('meta-ig-followers').textContent = '—';
-      document.getElementById('meta-ig-delta').innerHTML = '<span style="color:var(--gray-400);font-size:10px">Agrega seguidores al editar el cliente</span>';
+      document.getElementById('meta-ig-followers').textContent = 'Sin datos';
     }
 
     // Context panel
