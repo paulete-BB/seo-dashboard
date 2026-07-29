@@ -787,6 +787,15 @@ async function fillSiteSelect(selectedUrl){
   try{
     const res=await fetch('https://www.googleapis.com/webmasters/v3/sites',{headers:{Authorization:`Bearer ${S.token}`}});
     const data=await res.json();
+    if(res.status===401){
+      sel.innerHTML='<option value="">⚠ Sesión expirada — vuelve a iniciar sesión</option>';
+      handleExpiredToken();
+      return;
+    }
+    if(!res.ok||data.error){
+      sel.innerHTML=`<option value="">⚠ Error al cargar propiedades: ${data.error?.message||res.status}</option>`;
+      return;
+    }
     const sites=(data.siteEntry||[]).sort((a,b)=>a.siteUrl.localeCompare(b.siteUrl));
     const opts='<option value="">— Sin propiedad GSC (solo Ads/Meta) —</option>'+(sites.length?sites.map(s=>`<option value="${s.siteUrl}">${s.siteUrl}</option>`).join(''):'');
     sel.innerHTML=opts;
