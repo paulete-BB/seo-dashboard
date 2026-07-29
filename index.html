@@ -903,6 +903,7 @@ async function gscQ(body){
 function handleExpiredToken(){sessionStorage.removeItem('bb_t');S.token=null;setConn(false);if(S.id)sessionStorage.setItem('bb_pend',S.id);setTimeout(()=>doOAuth(),800);}
 async function ga4Query(propId,body){
   const res=await fetch(`https://analyticsdata.googleapis.com/v1beta/properties/${propId}:runReport`,{method:'POST',headers:{Authorization:`Bearer ${S.token}`,'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(res.status===401){handleExpiredToken();throw new Error('Token expirado — re-autenticando…');}
   if(!res.ok){const e=await res.json();throw new Error(e.error?.message||`GA4 ${res.status}`);}
   return res.json();
 }
